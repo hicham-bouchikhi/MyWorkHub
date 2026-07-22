@@ -1,0 +1,100 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MyWorkHub.UI.ViewModels"
+             xmlns:entities="using:MyWorkHub.Core.Entities"
+             x:Class="MyWorkHub.UI.Views.TodoView"
+             x:Name="Root"
+             x:DataType="vm:TodoViewModel">
+
+    <UserControl.Styles>
+        <Style Selector="Border.todoRow">
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*" Margin="24">
+
+        <!-- Header -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,16">
+            <TextBlock Grid.Column="0" Text="{Binding Title}" FontSize="24" FontWeight="SemiBold" VerticalAlignment="Center" />
+            <ComboBox Grid.Column="1"
+                      ItemsSource="{Binding Filters}"
+                      SelectedItem="{Binding Filter}"
+                      MinWidth="130"
+                      VerticalAlignment="Center" />
+        </Grid>
+
+        <!-- Inline add -->
+        <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Margin="0,0,0,16">
+            <TextBox Grid.Column="0"
+                     PlaceholderText="Add a task…"
+                     Text="{Binding NewTitle}">
+                <TextBox.KeyBindings>
+                    <KeyBinding Gesture="Enter" Command="{Binding AddCommand}" />
+                </TextBox.KeyBindings>
+            </TextBox>
+            <DatePicker Grid.Column="1" SelectedDate="{Binding NewDueDate}" VerticalAlignment="Center" />
+            <Button Grid.Column="2" Content="Add" Command="{Binding AddCommand}" VerticalAlignment="Center" />
+        </Grid>
+
+        <!-- Error -->
+        <TextBlock Grid.Row="2"
+                   Text="{Binding ErrorMessage}"
+                   IsVisible="{Binding ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                   Foreground="{DynamicResource AppDangerBrush}"
+                   Margin="0,0,0,8"
+                   TextWrapping="Wrap" />
+
+        <!-- List -->
+        <Panel Grid.Row="3">
+            <TextBlock Text="Nothing here yet." Opacity="0.7" VerticalAlignment="Top"
+                       IsVisible="{Binding !Items.Count}" />
+
+            <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding Items}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="entities:TodoItem">
+                            <Border Classes="todoRow card">
+                                <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="12">
+                                    <CheckBox Grid.Column="0"
+                                              VerticalAlignment="Center"
+                                              IsChecked="{Binding IsCompleted, Mode=OneWay}"
+                                              Command="{Binding #Root.((vm:TodoViewModel)DataContext).ToggleCompleteCommand}"
+                                              CommandParameter="{Binding}" />
+
+                                    <TextBlock Grid.Column="1"
+                                               VerticalAlignment="Center"
+                                               Text="{Binding Title}"
+                                               TextTrimming="CharacterEllipsis">
+                                        <TextBlock.Styles>
+                                            <Style Selector="TextBlock">
+                                                <Setter Property="Opacity" Value="1" />
+                                            </Style>
+                                        </TextBlock.Styles>
+                                    </TextBlock>
+
+                                    <TextBlock Grid.Column="2"
+                                               VerticalAlignment="Center"
+                                               Opacity="0.7"
+                                               FontSize="12"
+                                               Text="{Binding DueDate}"
+                                               IsVisible="{Binding DueDate, Converter={x:Static ObjectConverters.IsNotNull}}" />
+
+                                    <Button Grid.Column="3"
+                                            VerticalAlignment="Center"
+                                            Content="Delete"
+                                            Command="{Binding #Root.((vm:TodoViewModel)DataContext).DeleteCommand}"
+                                            CommandParameter="{Binding}" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Panel>
+    </Grid>
+</UserControl>

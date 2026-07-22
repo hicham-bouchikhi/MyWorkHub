@@ -1,0 +1,209 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="MyWorkHub.UI.Controls.MarkdownEditorControl">
+
+    <UserControl.Styles>
+        <!-- Uniform toolbar button: fixed height + centered content so every
+             button (text or emoji) lines up and sizes the same. -->
+        <Style Selector="Button.tb">
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Padding" Value="9,0" />
+            <Setter Property="MinWidth" Value="34" />
+            <Setter Property="Margin" Value="1,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.tb TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- ── Toolbar ─────────────────────────────────────────────────── -->
+        <Border Grid.Row="0"
+                Padding="8,4"
+                BorderThickness="0,0,0,1"
+                BorderBrush="#28808080">
+            <Grid ColumnDefinitions="*,Auto">
+
+                <!-- Left: formatting buttons (only shown in Edit mode) -->
+                <ScrollViewer Grid.Column="0"
+                              HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Disabled">
+                    <StackPanel x:Name="FormatToolbar"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Center"
+                                Spacing="0">
+
+                        <Button x:Name="BtnH1" Classes="tb" Click="OnH1Click" ToolTip.Tip="Heading 1  (#)">
+                            <TextBlock Text="H1" FontSize="11" FontWeight="Bold" />
+                        </Button>
+                        <Button x:Name="BtnH2" Classes="tb" Click="OnH2Click" ToolTip.Tip="Heading 2  (##)">
+                            <TextBlock Text="H2" FontSize="11" FontWeight="SemiBold" />
+                        </Button>
+                        <Button x:Name="BtnH3" Classes="tb" Click="OnH3Click" ToolTip.Tip="Heading 3  (###)">
+                            <TextBlock Text="H3" FontSize="11" />
+                        </Button>
+
+                        <Rectangle Width="1" Height="18" Margin="6,0" Fill="#30808080" />
+
+                        <Button x:Name="BtnBold" Classes="tb" Click="OnBoldClick" ToolTip.Tip="Bold  (**text**)">
+                            <TextBlock Text="B" FontSize="13" FontWeight="Bold" />
+                        </Button>
+                        <Button x:Name="BtnItalic" Classes="tb" Click="OnItalicClick" ToolTip.Tip="Italic  (*text*)">
+                            <TextBlock Text="I" FontSize="13" FontStyle="Italic" />
+                        </Button>
+                        <Button x:Name="BtnStrike" Classes="tb" Click="OnStrikeClick" ToolTip.Tip="Strikethrough  (~~text~~)">
+                            <TextBlock Text="S" FontSize="13" TextDecorations="Strikethrough" />
+                        </Button>
+                        <Button x:Name="BtnCode" Classes="tb" Click="OnCodeClick" ToolTip.Tip="Inline code  (`code`)">
+                            <TextBlock Text="&lt;/&gt;" FontSize="11"
+                                       FontFamily="Cascadia Code,Consolas,monospace" />
+                        </Button>
+
+                        <Rectangle Width="1" Height="18" Margin="6,0" Fill="#30808080" />
+
+                        <Button x:Name="BtnQuote" Classes="tb" Click="OnQuoteClick" ToolTip.Tip="Blockquote  (> text)">
+                            <TextBlock Text="❝" FontSize="13" />
+                        </Button>
+                        <Button x:Name="BtnCodeBlock" Classes="tb" Click="OnCodeBlockClick" ToolTip.Tip="Fenced code block  (```)">
+                            <TextBlock Text="{}{ }" FontSize="11"
+                                       FontFamily="Cascadia Code,Consolas,monospace" />
+                        </Button>
+                        <Button x:Name="BtnHR" Classes="tb" Click="OnHRClick" ToolTip.Tip="Horizontal rule  (---)">
+                            <TextBlock Text="─ HR" FontSize="11" />
+                        </Button>
+
+                        <Rectangle Width="1" Height="18" Margin="6,0" Fill="#30808080" />
+
+                        <Button x:Name="BtnUL" Classes="tb" Click="OnULClick" ToolTip.Tip="Bullet list  (- item)">
+                            <TextBlock Text="• List" FontSize="11" />
+                        </Button>
+                        <Button x:Name="BtnOL" Classes="tb" Click="OnOLClick" ToolTip.Tip="Numbered list  (1. item)">
+                            <TextBlock Text="1. List" FontSize="11" />
+                        </Button>
+
+                        <Rectangle Width="1" Height="18" Margin="6,0" Fill="#30808080" />
+
+                        <Button x:Name="BtnLink" Classes="tb" Click="OnLinkClick" ToolTip.Tip="Insert link  [text](url)">
+                            <TextBlock Text="🔗 Link" FontSize="11" />
+                        </Button>
+                        <Button x:Name="BtnImage" Classes="tb" Click="OnImageClick" ToolTip.Tip="Insert image  ![alt](url)">
+                            <TextBlock Text="🖼 Image" FontSize="11" />
+                        </Button>
+
+                        <Rectangle Width="1" Height="18" Margin="6,0" Fill="#30808080" />
+
+                        <Button x:Name="BtnTable" Classes="tb" ToolTip.Tip="Insert a Markdown table">
+                            <TextBlock Text="⊞ Table" FontSize="11" />
+                            <Button.Flyout>
+                                <Flyout Placement="BottomEdgeAlignedLeft" ShowMode="Transient">
+                                    <Border Padding="16" Width="250">
+                                        <StackPanel Spacing="12">
+
+                                            <TextBlock Text="Insert Table"
+                                                       FontWeight="SemiBold" FontSize="13" />
+
+                                            <Grid ColumnDefinitions="80,*"
+                                                  RowDefinitions="Auto,Auto,Auto">
+
+                                                <TextBlock Grid.Row="0" Grid.Column="0"
+                                                           Text="Rows" VerticalAlignment="Center"
+                                                           Margin="0,0,0,8" />
+                                                <NumericUpDown Grid.Row="0" Grid.Column="1"
+                                                               x:Name="TableRowCount"
+                                                               Minimum="1" Maximum="30" Value="3"
+                                                               FormatString="0" Margin="0,0,0,8"
+                                                               ToolTip.Tip="Data rows (header not counted)" />
+
+                                                <TextBlock Grid.Row="1" Grid.Column="0"
+                                                           Text="Columns" VerticalAlignment="Center"
+                                                           Margin="0,0,0,8" />
+                                                <NumericUpDown Grid.Row="1" Grid.Column="1"
+                                                               x:Name="TableColCount"
+                                                               Minimum="1" Maximum="15" Value="3"
+                                                               FormatString="0" Margin="0,0,0,8" />
+
+                                                <TextBlock Grid.Row="2" Grid.Column="0"
+                                                           Text="Alignment" VerticalAlignment="Center" />
+                                                <ComboBox Grid.Row="2" Grid.Column="1"
+                                                          x:Name="TableAlignment"
+                                                          HorizontalAlignment="Stretch"
+                                                          SelectedIndex="0">
+                                                    <ComboBoxItem Content="None  ( --- )" />
+                                                    <ComboBoxItem Content="Left  ( :--- )" />
+                                                    <ComboBoxItem Content="Center  ( :---: )" />
+                                                    <ComboBoxItem Content="Right  ( ---: )" />
+                                                </ComboBox>
+                                            </Grid>
+
+                                            <Button Content="Insert Table"
+                                                    Click="OnInsertTableClick"
+                                                    HorizontalAlignment="Stretch"
+                                                    HorizontalContentAlignment="Center" />
+
+                                        </StackPanel>
+                                    </Border>
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
+
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Right: always-visible actions -->
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Spacing="0"
+                            Margin="8,0,0,0">
+
+                    <Button x:Name="BtnFormat" Classes="tb" Click="OnFormatClick"
+                            ToolTip.Tip="Reflow markdown — align table columns, tidy spacing">
+                        <TextBlock Text="🧹 Format" FontSize="11" />
+                    </Button>
+
+                    <Rectangle Width="1" Height="18" Margin="6,0" Fill="#30808080" />
+
+                    <Button x:Name="ModeToggleButton" Classes="tb" Click="OnToggleModeClick"
+                            ToolTip.Tip="Cycle view: Split / Editor / Preview  (Ctrl+E)">
+                        <TextBlock x:Name="ModeToggleLabel" Text="◧  Split" FontSize="11" />
+                    </Button>
+
+                </StackPanel>
+
+            </Grid>
+        </Border>
+
+        <!-- ── Content: editor + preview side by side (mode-controlled) ─ -->
+        <Grid Grid.Row="1" x:Name="ContentGrid" ColumnDefinitions="*,Auto,*">
+
+            <TextBox Grid.Column="0"
+                     x:Name="EditorTextBox"
+                     AcceptsReturn="True"
+                     AcceptsTab="True"
+                     TextWrapping="NoWrap"
+                     FontFamily="Cascadia Code,Consolas,Courier New,monospace"
+                     FontSize="13"
+                     BorderThickness="0"
+                     CornerRadius="0"
+                     Padding="16"
+                     VerticalAlignment="Stretch" />
+
+            <GridSplitter Grid.Column="1"
+                          x:Name="PreviewSplitter"
+                          ResizeBehavior="PreviousAndNext"
+                          ResizeDirection="Columns"
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Stretch" />
+
+            <NativeWebView Grid.Column="2" x:Name="PreviewWebView" />
+
+        </Grid>
+
+    </Grid>
+
+</UserControl>

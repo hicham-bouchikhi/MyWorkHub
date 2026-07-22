@@ -1,0 +1,56 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\MyWorkHub.Core\MyWorkHub.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Core" Version="10.0.10" />
+    <!-- Sqlite.Core ships no native provider; pair it with the e_sqlite3 bundle,
+         which is cross-platform (Windows/Linux/macOS). The bundled native lib is
+         flagged by GHSA-2m69-gcr7-jv3q — suppressed in Directory.Build.props with
+         rationale (single-user local DB, never received from an untrusted source). -->
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.4" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.10" />
+    <!-- Cross-platform credential encryption at rest: DPAPI on Windows, AES-256+HMAC
+         with libsecret/Keychain-friendly key storage on Linux/macOS. Replaces the
+         Windows-only System.Security.Cryptography.ProtectedData. -->
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="10.0.10" />
+    <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.10" />
+    <!-- Microsoft Graph (email + calendar). 6.x is the current major; the
+         architecture doc predates it and says "5.x". Still Kiota-based, same
+         GraphServiceClient(IRequestAdapter) seam used for testing. -->
+    <PackageReference Include="Microsoft.Graph" Version="6.2.0" />
+
+    <!-- MSAL interactive auth + DPAPI-backed token cache on disk. -->
+    <PackageReference Include="Microsoft.Identity.Client" Version="4.86.1" />
+    <PackageReference Include="Microsoft.Identity.Client.Extensions.Msal" Version="4.86.1" />
+
+    <!-- Markdown -> HTML for Claude Code review reports. Dependency-free, CommonMark. -->
+    <PackageReference Include="Markdig" Version="1.3.2" />
+
+    <!-- Azure DevOps REST clients (pull requests + work items). -->
+
+  </ItemGroup>
+
+  <PropertyGroup>
+    <!-- Cross-platform (Windows/Linux/macOS). Credential encryption goes through
+         Microsoft.AspNetCore.DataProtection, which picks a per-OS backend. -->
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>MyWorkHub.Infrastructure.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+</Project>

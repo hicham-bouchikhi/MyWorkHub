@@ -1,0 +1,242 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:MyWorkHub.UI.ViewModels"
+        xmlns:nav="using:MyWorkHub.UI.Navigation"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="720"
+        x:Class="MyWorkHub.UI.Views.MainWindow"
+        x:Name="Root"
+        x:DataType="vm:MainWindowViewModel"
+        Width="1100" Height="720"
+        Background="{DynamicResource AppCanvasBrush}"
+        Title="MyWorkHub">
+
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- Top status bar (lifted above the body so its shadow reads as depth) -->
+        <Border Grid.Row="0"
+                ZIndex="1"
+                Padding="8,6"
+                Background="{DynamicResource AppSurfaceBrush}"
+                BorderThickness="0,0,0,1"
+                BorderBrush="{DynamicResource AppBorderBrush}"
+                BoxShadow="0 2 8 0 #22000000">
+            <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto">
+                <Button Grid.Column="0"
+                        Command="{Binding ToggleSidebarCommand}"
+                        Content="☰"
+                        FontSize="16"
+                        Padding="10,4"
+                        ToolTip.Tip="Collapse / expand sidebar" />
+                <TextBlock Grid.Column="1"
+                           Text="MyWorkHub"
+                           FontWeight="SemiBold"
+                           VerticalAlignment="Center"
+                           Margin="12,0,0,0" />
+                <TextBlock Grid.Column="3"
+                           Text="{Binding SelectedItem.Label}"
+                           Opacity="0.7"
+                           VerticalAlignment="Center"
+                           Margin="0,0,8,0" />
+
+                <!-- Notification bell -->
+                <Button Grid.Column="4"
+                        Padding="10,4"
+                        VerticalAlignment="Center"
+                        ToolTip.Tip="Notifications">
+                    <Panel>
+                        <!-- Monochrome bell (Segoe MDL2 "Ringer") so Foreground tints it.
+                             Tints accent and pulses while any operation runs (Classes.bellActive). -->
+                        <TextBlock Classes="bell"
+                                   Classes.bellActive="{Binding Notifications.HasActive}"
+                                   Text="&#xE7E7;"
+                                   FontFamily="Segoe MDL2 Assets"
+                                   FontSize="16" />
+                        <Border IsVisible="{Binding Notifications.HasUnread}"
+                                Background="{DynamicResource AppDangerBrush}"
+                                CornerRadius="8"
+                                MinWidth="16" Height="16"
+                                Padding="4,0"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Top"
+                                Margin="0,-4,-6,0">
+                            <TextBlock Text="{Binding Notifications.UnreadBadge}"
+                                       Foreground="White"
+                                       FontSize="10"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center" />
+                        </Border>
+                    </Panel>
+                    <Button.Flyout>
+                        <Flyout Placement="BottomEdgeAlignedRight" Opened="OnNotificationsFlyoutOpened">
+                            <Border Width="360" MaxHeight="440"
+                                    Background="{DynamicResource AppSurfaceBrush}"
+                                    CornerRadius="8"
+                                    BoxShadow="0 8 24 0 #33000000"
+                                    x:DataType="vm:MainWindowViewModel">
+                                <DockPanel Margin="12" LastChildFill="True">
+                                    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,8">
+                                        <TextBlock Grid.Column="0" Text="Notifications"
+                                                   FontWeight="SemiBold" VerticalAlignment="Center" />
+                                        <Button Grid.Column="1" Content="Clear"
+                                                Padding="8,2" FontSize="12"
+                                                Command="{Binding Notifications.ClearCommand}"
+                                                IsVisible="{Binding Notifications.HasAny}" />
+                                    </Grid>
+
+                                    <!-- Currently-running operations -->
+                                    <StackPanel DockPanel.Dock="Top"
+                                                IsVisible="{Binding Notifications.HasActive}"
+                                                Margin="0,0,0,8" Spacing="4">
+                                        <TextBlock Text="In progress" FontWeight="SemiBold"
+                                                   FontSize="12" Opacity="0.7" />
+                                        <ItemsControl ItemsSource="{Binding Notifications.ActiveOperations}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:ActiveOperation">
+                                                    <Border CornerRadius="6"
+                                                            Background="{DynamicResource AppSurfaceAltBrush}"
+                                                            Padding="8,6" Margin="0,2">
+                                                        <StackPanel Spacing="6">
+                                                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                                                <TextBlock Grid.Column="0" Text="{Binding Label}"
+                                                                           FontSize="12" VerticalAlignment="Center"
+                                                                           TextTrimming="CharacterEllipsis" />
+                                                                <Button Grid.Column="1" Classes="iconGhost"
+                                                                        Content="✕"
+                                                                        Command="{Binding CancelCommand}"
+                                                                        IsEnabled="{Binding !IsCancelling}"
+                                                                        ToolTip.Tip="Stop"
+                                                                        VerticalAlignment="Center" />
+                                                            </Grid>
+                                                            <ProgressBar IsIndeterminate="True"
+                                                                         Height="2"
+                                                                         HorizontalAlignment="Stretch"
+                                                                         Foreground="{DynamicResource AppAccentBrush}" />
+                                                        </StackPanel>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <Separator />
+                                    </StackPanel>
+
+                                    <TextBlock DockPanel.Dock="Top"
+                                               Text="No notifications yet."
+                                               Opacity="0.6" FontSize="12"
+                                               Margin="0,4"
+                                               IsVisible="{Binding !Notifications.HasAny}" />
+
+                                    <ScrollViewer>
+                                        <ItemsControl ItemsSource="{Binding Notifications.Notifications}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:NotificationEntry">
+                                                    <Button Command="{Binding ActivateCommand}"
+                                                            HorizontalAlignment="Stretch"
+                                                            HorizontalContentAlignment="Stretch"
+                                                            Padding="8,6" Margin="0,2"
+                                                            CornerRadius="6"
+                                                            Background="{DynamicResource AppSurfaceAltBrush}"
+                                                            BorderThickness="0">
+                                                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                                                            <TextBlock Grid.Column="0" Text="{Binding SeverityGlyph}"
+                                                                       FontSize="14" VerticalAlignment="Top" />
+                                                            <StackPanel Grid.Column="1" Spacing="1">
+                                                                <TextBlock Text="{Binding Title}"
+                                                                           FontWeight="SemiBold"
+                                                                           TextTrimming="CharacterEllipsis" />
+                                                                <TextBlock Text="{Binding Message}"
+                                                                           FontSize="12" Opacity="0.85"
+                                                                           TextWrapping="Wrap" />
+                                                            </StackPanel>
+                                                            <TextBlock Grid.Column="2" Text="{Binding TimeText}"
+                                                                       FontSize="11"
+                                                                       Foreground="{DynamicResource AppTextMutedBrush}"
+                                                                       VerticalAlignment="Top" />
+                                                        </Grid>
+                                                    </Button>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </DockPanel>
+                            </Border>
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- Body: sidebar + content -->
+        <Grid Grid.Row="1" ColumnDefinitions="Auto,*">
+
+            <Border Grid.Column="0"
+                    ZIndex="1"
+                    Width="{Binding SidebarWidth}"
+                    Background="{DynamicResource AppSurfaceBrush}"
+                    BorderThickness="0,0,1,0"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    BoxShadow="2 0 8 0 #1F000000">
+                <DockPanel>
+
+                    <!-- Developer item pinned at the bottom -->
+                    <StackPanel DockPanel.Dock="Bottom">
+                        <Separator Margin="8,4" />
+                        <ListBox Classes="nav"
+                                 ItemsSource="{Binding BottomNavItems}"
+                                 SelectedItem="{Binding SelectedItem}"
+                                 Background="Transparent"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 Padding="4">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate x:DataType="nav:NavigationItem">
+                                    <StackPanel Orientation="Horizontal" Spacing="12">
+                                        <TextBlock Text="{Binding Icon}"
+                                                   FontSize="18"
+                                                   Width="24"
+                                                   TextAlignment="Center"
+                                                   VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding Label}"
+                                                   VerticalAlignment="Center"
+                                                   IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).IsSidebarExpanded}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </StackPanel>
+
+                    <!-- Main navigation -->
+                    <ListBox Classes="nav"
+                             ItemsSource="{Binding NavigationItems}"
+                             SelectedItem="{Binding SelectedItem}"
+                             Background="Transparent"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             Padding="4">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="nav:NavigationItem">
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <TextBlock Text="{Binding Icon}"
+                                               FontSize="18"
+                                               Width="24"
+                                               TextAlignment="Center"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Label}"
+                                               VerticalAlignment="Center"
+                                               IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).IsSidebarExpanded}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                </DockPanel>
+            </Border>
+
+            <!-- Active page; the view is resolved by ViewLocator from the page view-model. -->
+            <TransitioningContentControl Grid.Column="1"
+                                         Content="{Binding Navigation.CurrentPage}"
+                                         PageTransition="{x:Null}" />
+
+        </Grid>
+    </Grid>
+
+</Window>

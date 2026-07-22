@@ -1,0 +1,163 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MyWorkHub.UI.ViewModels"
+             x:Class="MyWorkHub.UI.Views.PullRequestsView"
+             x:Name="Root"
+             x:DataType="vm:PullRequestsViewModel">
+
+    <UserControl.Styles>
+        <Style Selector="Border.prRow">
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="12" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+        </Style>
+        <Style Selector="Border.prRow.aging">
+            <Setter Property="BorderBrush" Value="{DynamicResource AppWarningBrush}" />
+            <Setter Property="BorderThickness" Value="2" />
+        </Style>
+        <Style Selector="Border.prRow.stale">
+            <Setter Property="BorderBrush" Value="{DynamicResource AppDangerBrush}" />
+            <Setter Property="BorderThickness" Value="2" />
+        </Style>
+
+        <!-- Reviewer-vote badge: colour driven by the row's BadgeCategory via Classes. -->
+        <Style Selector="Border.badge">
+            <Setter Property="Background" Value="{DynamicResource AppNeutralBrush}" />
+        </Style>
+        <Style Selector="Border.badge.success">
+            <Setter Property="Background" Value="{DynamicResource AppSuccessBrush}" />
+        </Style>
+        <Style Selector="Border.badge.successAlt">
+            <Setter Property="Background" Value="{DynamicResource AppSuccessAltBrush}" />
+        </Style>
+        <Style Selector="Border.badge.warning">
+            <Setter Property="Background" Value="{DynamicResource AppWarningBrush}" />
+        </Style>
+        <Style Selector="Border.badge.danger">
+            <Setter Property="Background" Value="{DynamicResource AppDangerBrush}" />
+        </Style>
+        <Style Selector="Border.badge.neutral">
+            <Setter Property="Background" Value="{DynamicResource AppNeutralBrush}" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*" Margin="24">
+
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,16">
+            <TextBlock Grid.Column="0" Text="{Binding Title}" FontSize="24" FontWeight="SemiBold" VerticalAlignment="Center" />
+            <Button Grid.Column="1" Content="↻ Refresh" Command="{Binding RefreshCommand}" IsEnabled="{Binding !IsLoading}" />
+        </Grid>
+
+        <Panel Grid.Row="1">
+
+            <!-- PAT not configured -->
+            <Border IsVisible="{Binding NeedsConfiguration}"
+                    VerticalAlignment="Top"
+                    Background="{DynamicResource AppSurfaceAltBrush}"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    BorderThickness="1" CornerRadius="6" Padding="16">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="{Binding ConfigurationMessage}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                    <TextBlock Text="Settings → Integrations → Azure DevOps: paste a Personal Access Token and add your team project name(s)."
+                               Opacity="0.75" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <!-- Error -->
+            <Border IsVisible="{Binding ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                    VerticalAlignment="Top"
+                    Background="{DynamicResource AppSurfaceAltBrush}"
+                    BorderBrush="{DynamicResource AppDangerBrush}" BorderThickness="1" CornerRadius="6" Padding="16">
+                <TextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap" />
+            </Border>
+
+            <TextBlock Text="Loading…" Opacity="0.7" IsVisible="{Binding IsLoading}" VerticalAlignment="Top" />
+
+            <TextBlock Text="No pull requests awaiting your review." Opacity="0.7"
+                       IsVisible="{Binding IsEmpty}" VerticalAlignment="Top" />
+
+            <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding PullRequests}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:PullRequestRow">
+                            <Border Classes="prRow card" Classes.aging="{Binding IsAging}" Classes.stale="{Binding IsStale}">
+                              <StackPanel Spacing="6">
+                                <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
+                                    <StackPanel Grid.Column="0" Spacing="2">
+                                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Opacity="0.75" TextTrimming="CharacterEllipsis">
+                                            <Run Text="{Binding Repository}" />
+                                            <Run Text="·" />
+                                            <Run Text="{Binding Author}" />
+                                            <Run Text="·" />
+                                            <Run Text="{Binding AgeText}" />
+                                        </TextBlock>
+                                        <Border IsVisible="{Binding IsViaTeam}"
+                                                HorizontalAlignment="Left"
+                                                Background="{DynamicResource AppSurfaceAltBrush}"
+                                                BorderBrush="{DynamicResource AppAccentBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="8"
+                                                Padding="8,1"
+                                                Margin="0,2,0,0">
+                                            <TextBlock Text="{Binding ViaTeamLabel}" FontSize="11" />
+                                        </Border>
+                                    </StackPanel>
+
+                                    <Border Grid.Column="1"
+                                            VerticalAlignment="Center"
+                                            Classes="badge"
+                                            Classes.success="{Binding IsBadgeSuccess}"
+                                            Classes.successAlt="{Binding IsBadgeSuccessAlt}"
+                                            Classes.warning="{Binding IsBadgeWarning}"
+                                            Classes.danger="{Binding IsBadgeDanger}"
+                                            Classes.neutral="{Binding IsBadgeNeutral}"
+                                            CornerRadius="10" Padding="10,3">
+                                        <TextBlock Text="{Binding VoteStatus}" Foreground="White" FontSize="12" />
+                                    </Border>
+
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                        <Button Content="Review"
+                                                IsVisible="{Binding !IsReviewing}"
+                                                Command="{Binding #Root.((vm:PullRequestsViewModel)DataContext).ReviewPrCommand}"
+                                                CommandParameter="{Binding}" />
+                                        <ProgressBar IsIndeterminate="True"
+                                                     IsVisible="{Binding IsReviewing}"
+                                                     Width="90" VerticalAlignment="Center" />
+                                        <Button Content="Stop"
+                                                IsVisible="{Binding IsReviewing}"
+                                                Command="{Binding #Root.((vm:PullRequestsViewModel)DataContext).CancelReviewCommand}"
+                                                CommandParameter="{Binding}" />
+                                    </StackPanel>
+
+                                    <Button Grid.Column="3"
+                                            VerticalAlignment="Center"
+                                            Content="Open in AzDO"
+                                            Command="{Binding #Root.((vm:PullRequestsViewModel)DataContext).OpenCommand}"
+                                            CommandParameter="{Binding}" />
+                                </Grid>
+
+                                <TextBlock Text="{Binding ReviewStatus}"
+                                           IsVisible="{Binding IsReviewing}"
+                                           FontSize="12" Opacity="0.8" TextWrapping="Wrap" />
+
+                                <Expander Header="Review activity"
+                                          IsVisible="{Binding HasReviewLog}"
+                                          IsExpanded="False" Margin="0,2,0,0">
+                                    <SelectableTextBlock Text="{Binding ReviewLogText}"
+                                                         FontSize="12"
+                                                         FontFamily="Consolas, monospace"
+                                                         TextWrapping="Wrap" />
+                                </Expander>
+                              </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+        </Panel>
+    </Grid>
+</UserControl>

@@ -1,0 +1,262 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MyWorkHub.UI.ViewModels"
+             x:Class="MyWorkHub.UI.Views.SettingsView"
+             x:Name="Root"
+             x:DataType="vm:SettingsViewModel">
+
+    <Grid RowDefinitions="Auto,*" Margin="24">
+        <TextBlock Grid.Row="0" Text="{Binding Title}" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,16" />
+
+        <TabControl Grid.Row="1">
+
+            <!-- Integrations -->
+            <TabItem Header="Integrations">
+                <ScrollViewer>
+                    <StackPanel Spacing="16" Margin="0,12,0,0" MaxWidth="640" HorizontalAlignment="Left">
+
+                        <TextBlock Text="Azure DevOps" FontSize="18" FontWeight="SemiBold" />
+
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Personal Access Token (PAT)" FontWeight="SemiBold" />
+                            <TextBox PasswordChar="●"
+                                     Text="{Binding PersonalAccessTokenInput}"
+                                     PlaceholderText="Paste your PAT here" />
+                            <TextBlock Text="A PAT is already saved — leave blank to keep it."
+                                       FontSize="12"
+                                       Opacity="0.7"
+                                       IsVisible="{Binding HasExistingPat}" />
+                            <TextBlock Text="Scopes needed: Code (Read), Work Items (Read)."
+                                       FontSize="12"
+                                       Opacity="0.7" />
+                        </StackPanel>
+
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Organization URL" FontWeight="SemiBold" />
+                            <TextBox Text="{Binding OrganizationUrl}"
+                                     PlaceholderText="https://dev.azure.com/cegid/" />
+                        </StackPanel>
+
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Projects" FontWeight="SemiBold" />
+                            <TextBlock Text="Team project names as they appear in the URL (dev.azure.com/cegid/&lt;project&gt;)."
+                                       FontSize="12"
+                                       Opacity="0.7" />
+
+                            <ItemsControl ItemsSource="{Binding Projects}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="x:String">
+                                        <Grid ColumnDefinitions="*,Auto" Margin="0,2">
+                                            <TextBlock Grid.Column="0" Text="{Binding}" VerticalAlignment="Center" />
+                                            <Button Grid.Column="1"
+                                                    Content="Remove"
+                                                    Command="{Binding #Root.((vm:SettingsViewModel)DataContext).RemoveProjectCommand}"
+                                                    CommandParameter="{Binding}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                <TextBox Grid.Column="0"
+                                         Text="{Binding NewProject}"
+                                         PlaceholderText="Add a project name" />
+                                <Button Grid.Column="1" Content="Add" Command="{Binding AddProjectCommand}" />
+                            </Grid>
+                        </StackPanel>
+
+                        <Separator Margin="0,8" />
+
+                        <!-- Microsoft 365 -->
+                        <TextBlock Text="Microsoft 365" FontSize="18" FontWeight="SemiBold" />
+
+                        <Border BorderThickness="1"
+                                BorderBrush="{DynamicResource AppBorderBrush}"
+                                CornerRadius="8">
+                            <StackPanel Spacing="8" Margin="16,12">
+
+                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                    <TextBlock Text="Status:" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                    <TextBlock VerticalAlignment="Center"
+                                               IsVisible="{Binding IsMicrosoftConnected}">
+                                        <Run Text="Connected as " />
+                                        <Run Text="{Binding MicrosoftAccount}" FontWeight="SemiBold" />
+                                    </TextBlock>
+                                    <TextBlock Text="Not connected"
+                                               Opacity="0.6"
+                                               VerticalAlignment="Center"
+                                               IsVisible="{Binding IsMicrosoftConnected, Converter={x:Static BoolConverters.Not}}" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button Content="Connect"
+                                            Command="{Binding ConnectMicrosoftCommand}"
+                                            Classes="accent"
+                                            IsVisible="{Binding IsMicrosoftConnected, Converter={x:Static BoolConverters.Not}}" />
+                                    <Button Content="Connecting…"
+                                            IsEnabled="False"
+                                            IsVisible="{Binding IsMicrosoftConnecting}" />
+                                    <Button Content="Disconnect"
+                                            Command="{Binding DisconnectMicrosoftCommand}"
+                                            IsVisible="{Binding IsMicrosoftConnected}" />
+                                </StackPanel>
+
+                                <TextBlock Text="{Binding MicrosoftStatusMessage}"
+                                           Foreground="{DynamicResource AppDangerBrush}"
+                                           FontSize="12"
+                                           TextWrapping="Wrap"
+                                           IsVisible="{Binding MicrosoftStatusMessage, Converter={x:Static ObjectConverters.IsNotNull}}" />
+
+                                <TextBlock Text="Connects your Microsoft 365 account (Mail, Calendar, Teams)."
+                                           FontSize="12"
+                                           Opacity="0.6" />
+                            </StackPanel>
+                        </Border>
+
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <Button Content="Save" Command="{Binding SaveCommand}" Classes="accent" />
+                            <TextBlock Text="{Binding StatusMessage}"
+                                       Opacity="0.8"
+                                       VerticalAlignment="Center"
+                                       IsVisible="{Binding StatusMessage, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                        </StackPanel>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Email -->
+            <TabItem Header="Email">
+                <ScrollViewer>
+                    <StackPanel Spacing="16" Margin="0,12,0,0" MaxWidth="640" HorizontalAlignment="Left">
+
+                        <TextBlock Text="Watched folders" FontSize="18" FontWeight="SemiBold" />
+                        <TextBlock Text="Choose which Outlook folders feed the email digest. Unread and flagged messages from every ticked folder are merged, newest first."
+                                   FontSize="12" Opacity="0.7" TextWrapping="Wrap" />
+
+                        <Border BorderThickness="1" BorderBrush="{DynamicResource AppBorderBrush}" CornerRadius="8" ClipToBounds="True">
+                            <TreeView ItemsSource="{Binding EmailFolders}" MaxHeight="380" Margin="8">
+                                <TreeView.ItemTemplate>
+                                    <TreeDataTemplate x:DataType="vm:MailFolderRow" ItemsSource="{Binding Children}">
+                                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                                            <CheckBox Grid.Column="0" IsChecked="{Binding IsWatched}" VerticalAlignment="Center" />
+                                            <TextBlock Grid.Column="1" Text="{Binding DisplayName}"
+                                                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                            <!-- Right margin keeps the count clear of the overlay scrollbar gutter. -->
+                                            <TextBlock Grid.Column="2" Text="{Binding UnreadItemCount}"
+                                                       Opacity="0.6" VerticalAlignment="Center"
+                                                       MinWidth="20" TextAlignment="Right" Margin="8,0,16,0" />
+                                        </Grid>
+                                    </TreeDataTemplate>
+                                </TreeView.ItemTemplate>
+                            </TreeView>
+                        </Border>
+
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <Button Content="Save" Command="{Binding SaveEmailFoldersCommand}" Classes="accent" />
+                            <Button Content="↻ Refresh" Command="{Binding LoadEmailFoldersCommand}" />
+                            <TextBlock Text="{Binding EmailStatusMessage}"
+                                       Opacity="0.8"
+                                       VerticalAlignment="Center"
+                                       TextWrapping="Wrap"
+                                       IsVisible="{Binding EmailStatusMessage, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                        </StackPanel>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Placeholder -->
+            <TabItem Header="Automations">
+                <TextBlock Text="Automation settings are coming soon." Opacity="0.7" Margin="0,12,0,0" />
+            </TabItem>
+
+            <!-- Preferences -->
+            <TabItem Header="Preferences">
+                <ScrollViewer>
+                    <StackPanel Spacing="16" Margin="0,12,0,0" MaxWidth="640" HorizontalAlignment="Left">
+
+                        <TextBlock Text="Appearance" FontSize="18" FontWeight="SemiBold" />
+
+                        <Border BorderThickness="1"
+                                BorderBrush="{DynamicResource AppBorderBrush}"
+                                CornerRadius="8">
+                            <StackPanel Margin="16,12" Spacing="12">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                                        <TextBlock Text="Theme" FontWeight="SemiBold" />
+                                        <TextBlock Text="Choose Light, Dark, or follow your system setting."
+                                                   FontSize="12"
+                                                   Opacity="0.6" />
+                                    </StackPanel>
+                                    <ComboBox Grid.Column="1"
+                                              ItemsSource="{Binding ThemeOptions}"
+                                              SelectedItem="{Binding SelectedTheme}"
+                                              MinWidth="140"
+                                              VerticalAlignment="Center" />
+                                </Grid>
+
+                                <Separator />
+
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                                        <TextBlock Text="Palette" FontWeight="SemiBold" />
+                                        <TextBlock Text="Developer colour scheme. Applies instantly to Light and Dark."
+                                                   FontSize="12"
+                                                   Opacity="0.6" />
+                                    </StackPanel>
+                                    <ComboBox Grid.Column="1"
+                                              ItemsSource="{Binding PaletteOptions}"
+                                              SelectedItem="{Binding SelectedPalette}"
+                                              MinWidth="140"
+                                              VerticalAlignment="Center" />
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Text="Code review" FontSize="18" FontWeight="SemiBold" Margin="0,8,0,0" />
+
+                        <Border BorderThickness="1"
+                                BorderBrush="{DynamicResource AppBorderBrush}"
+                                CornerRadius="8">
+                            <StackPanel Margin="16,12" Spacing="12">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Work folder" FontWeight="SemiBold" />
+                                    <TextBlock Text="Where PR repositories are cloned for review with Claude Code."
+                                               FontSize="12" Opacity="0.6" />
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                        <TextBox Grid.Column="0" Text="{Binding WorkFolderPath}" PlaceholderText="C:\repos\cegid-reviews" />
+                                        <Button Grid.Column="1" Content="Browse…" Command="{Binding BrowseWorkFolderCommand}" />
+                                    </Grid>
+                                </StackPanel>
+
+                                <Separator />
+
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Claude executable path" FontWeight="SemiBold" />
+                                    <TextBlock Text="Full path to the claude CLI. Leave empty to resolve it from PATH."
+                                               FontSize="12" Opacity="0.6" />
+                                    <TextBox Text="{Binding ClaudeExecutablePath}" PlaceholderText="(leave empty to use PATH)" />
+                                </StackPanel>
+
+                                <Separator />
+
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Review model" FontWeight="SemiBold" />
+                                    <TextBlock Text="Model id passed to claude --model for reviews."
+                                               FontSize="12" Opacity="0.6" />
+                                    <TextBox Text="{Binding ReviewModelId}" PlaceholderText="claude-sonnet-5" />
+                                </StackPanel>
+
+                                <Button Content="Save" Command="{Binding SaveCommand}" HorizontalAlignment="Left" />
+                                <TextBlock Text="{Binding StatusMessage}" FontSize="12" Opacity="0.7" />
+                            </StackPanel>
+                        </Border>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+        </TabControl>
+    </Grid>
+</UserControl>

@@ -1,0 +1,122 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+indent_style = space
+trim_trailing_whitespace = true
+
+[*.{cs,csx}]
+indent_size = 4
+
+[*.{csproj,props,targets,json,axaml,xaml}]
+indent_size = 2
+
+[*.cs]
+
+# ----------------------------------------------------------------------------
+# AOT tripwire — keep the trim/AOT analyzer warnings as hard errors even though
+# we do not publish AOT. If a future dependency drags in IL-unsafe code paths we
+# want to find out at build time, not at runtime. (dotnet-tdd skill requirement.)
+# ----------------------------------------------------------------------------
+dotnet_diagnostic.IL2026.severity = error
+dotnet_diagnostic.IL2091.severity = error
+dotnet_diagnostic.IL3050.severity = error
+dotnet_diagnostic.IL3051.severity = error
+
+# ----------------------------------------------------------------------------
+# Naming conventions (Hicham's house style).
+#   constants            -> UPPER_CASE_WITH_UNDERSCORES
+#   private/instance fld -> _camelCase
+#   protected properties -> PascalCase
+# ----------------------------------------------------------------------------
+dotnet_naming_rule.constants_upper_case.severity = warning
+dotnet_naming_rule.constants_upper_case.symbols = constant_fields
+dotnet_naming_rule.constants_upper_case.style = upper_snake
+dotnet_naming_symbols.constant_fields.applicable_kinds = field
+dotnet_naming_symbols.constant_fields.required_modifiers = const
+dotnet_naming_style.upper_snake.capitalization = all_upper
+dotnet_naming_style.upper_snake.word_separator = _
+
+dotnet_naming_rule.private_fields_underscore.severity = warning
+dotnet_naming_rule.private_fields_underscore.symbols = private_fields
+dotnet_naming_rule.private_fields_underscore.style = underscore_camel
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private, private_protected
+dotnet_naming_style.underscore_camel.capitalization = camel_case
+dotnet_naming_style.underscore_camel.required_prefix = _
+
+dotnet_naming_rule.protected_props_pascal.severity = warning
+dotnet_naming_rule.protected_props_pascal.symbols = protected_properties
+dotnet_naming_rule.protected_props_pascal.style = pascal_case_style
+dotnet_naming_symbols.protected_properties.applicable_kinds = property
+dotnet_naming_symbols.protected_properties.applicable_accessibilities = protected, protected_internal
+dotnet_naming_style.pascal_case_style.capitalization = pascal_case
+
+# ----------------------------------------------------------------------------
+# Curated analyzer relaxations. AnalysisMode=All is on; these specific rules are
+# turned down because they conflict with documented decisions or are pure noise
+# for a single-user Windows desktop tool. Each carries its justification.
+# ----------------------------------------------------------------------------
+
+# CA1031: Do NOT catch general exception types.
+# ARCHITECTURE.md §9 EXPLICITLY requires each RemoteWorkSyncJob step (Outlook,
+# PeopleNet, mwork) to be wrapped in its own broad try/catch so one failure never
+# aborts the others. Broad catch is a deliberate design choice here.
+dotnet_diagnostic.CA1031.severity = none
+
+# CA2007: Consider calling ConfigureAwait. This is a UI app — VM/UI code must
+# resume on the Avalonia UI thread, so ConfigureAwait(false) would be wrong.
+dotnet_diagnostic.CA2007.severity = none
+
+# CA1303: Do not pass literals as localized parameters. Single-user internal
+# tool; no localization/resource-table requirement (PRD §2.1, §3).
+dotnet_diagnostic.CA1303.severity = none
+
+# CA1812: Avoid uninstantiated internal classes. Types constructed only by the
+# DI container read as "uninstantiated" to the analyzer.
+dotnet_diagnostic.CA1812.severity = none
+
+# CA1515: Consider making public types internal. This is an application, not a
+# shipped library, so a tight public surface adds no value.
+dotnet_diagnostic.CA1515.severity = none
+
+# CA1054/CA1055/CA1056: URI parameters/return values/properties should be System.Uri,
+# not string. The options DTOs are bound straight from appsettings.json string values,
+# and the read-model URLs (EmailItem/PullRequestItem/WorkItem.Url and the AzDO URL
+# builders) are display/navigation strings consumed by Avalonia bindings and the
+# browser-launch action — never parsed. Keeping them as strings is what those call
+# sites expect.
+dotnet_diagnostic.CA1054.severity = none
+dotnet_diagnostic.CA1055.severity = none
+dotnet_diagnostic.CA1056.severity = none
+
+# CA1716: Identifiers should not match keywords (e.g. ICredentialStore.Get clashes
+# with VB's Get). The service interfaces are specified verbatim in ARCHITECTURE.md
+# §6; this app is never consumed from VB, so the cross-language concern is moot.
+dotnet_diagnostic.CA1716.severity = none
+
+# CA1724: Type name conflicts with namespace name. Avalonia's Application subclass
+# is conventionally named "App" and lives in the "*.App" project namespace; the
+# x:Class in App.axaml binds to it. Renaming would break that convention.
+dotnet_diagnostic.CA1724.severity = none
+
+# Generated EF Core migration code — do not hold scaffolded files to style rules.
+[**/Migrations/*.cs]
+generated_code = true
+dotnet_analyzer_diagnostic.severity = none
+
+# Test projects. Descriptive test names use underscores by house style
+# (Should_do_X_when_Y), which CA1707 would otherwise reject.
+[tests/**.cs]
+dotnet_diagnostic.CA1707.severity = none
+
+# CredentialKeys exposes well-known ICredentialStore keys as PUBLIC constants
+# (shared by the Settings UI and the AzDO/Playwright services). The house constant
+# style — enforced by the constants_upper_case naming rule — is
+# UPPER_CASE_WITH_UNDERSCORES, which is exactly what CA1707 forbids on public
+# members. These are constants by intent, so the naming rule wins and CA1707 is
+# turned off for this single file only.
+[**/CredentialKeys.cs]
+dotnet_diagnostic.CA1707.severity = none

@@ -1,0 +1,10 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MyWorkHub.UI.ViewModels"
+             x:Class="MyWorkHub.UI.Views.AutomationsView"
+             x:DataType="vm:AutomationsViewModel">
+    <StackPanel Margin="24" Spacing="8" VerticalAlignment="Top">
+        <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="SemiBold" />
+        <TextBlock Text="This section is coming soon." Opacity="0.7" />
+    </StackPanel>
+</UserControl>

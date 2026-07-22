@@ -1,0 +1,41 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="MyWorkHub.App.App"
+             xmlns:ui="using:MyWorkHub.UI"
+             RequestedThemeVariant="Default">
+             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+
+    <Application.DataTemplates>
+        <ui:ViewLocator/>
+    </Application.DataTemplates>
+
+    <!-- Default palette merged statically so the App* tokens always resolve (incl. the designer);
+         PaletteManager swaps in the user's chosen palette at startup and at runtime. -->
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="avares://MyWorkHub.UI/Themes/GitHub.axaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+
+    <TrayIcon.Icons>
+        <TrayIcons>
+            <TrayIcon Icon="/Assets/avalonia-logo.ico" ToolTipText="MyWorkHub">
+                <TrayIcon.Menu>
+                    <NativeMenu>
+                        <NativeMenuItem Header="Open MyWorkHub" Click="OnOpenClicked" />
+                        <NativeMenuItemSeparator />
+                        <NativeMenuItem Header="Quit" Click="OnQuitClicked" />
+                    </NativeMenu>
+                </TrayIcon.Menu>
+            </TrayIcon>
+        </TrayIcons>
+    </TrayIcon.Icons>
+
+    <Application.Styles>
+        <FluentTheme />
+        <!-- Shared motion / interaction / elevation styles, merged after FluentTheme so they win. -->
+        <StyleInclude Source="avares://MyWorkHub.UI/Styles/AppStyles.axaml" />
+    </Application.Styles>
+</Application>

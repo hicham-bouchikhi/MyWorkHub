@@ -1,0 +1,65 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+        GitHub palette. Defines the shared App* design tokens (plus a Fluent SystemAccentColor
+        override) for both the Light and Dark ThemeVariant. Consumed via DynamicResource so the
+        active variant is picked automatically and a runtime palette swap re-tints live.
+    -->
+    <ResourceDictionary.ThemeDictionaries>
+
+        <!-- ── GitHub Light ──────────────────────────────────────────────── -->
+        <ResourceDictionary x:Key="Light">
+            <Color x:Key="AppAccentColor">#0969DA</Color>
+            <Color x:Key="SystemAccentColor">#0969DA</Color>
+            <Color x:Key="SystemAccentColorLight1">#1F79E6</Color>
+            <Color x:Key="SystemAccentColorLight2">#3589F0</Color>
+            <Color x:Key="SystemAccentColorLight3">#4B99FA</Color>
+            <Color x:Key="SystemAccentColorDark1">#0858C0</Color>
+            <Color x:Key="SystemAccentColorDark2">#0747A6</Color>
+            <Color x:Key="SystemAccentColorDark3">#06378C</Color>
+
+            <SolidColorBrush x:Key="AppCanvasBrush" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="AppSurfaceBrush" Color="#F6F8FA" />
+            <SolidColorBrush x:Key="AppSurfaceAltBrush" Color="#EAEEF2" />
+            <SolidColorBrush x:Key="AppBorderBrush" Color="#D0D7DE" />
+            <SolidColorBrush x:Key="AppTextBrush" Color="#1F2328" />
+            <SolidColorBrush x:Key="AppTextMutedBrush" Color="#656D76" />
+            <SolidColorBrush x:Key="AppAccentBrush" Color="#0969DA" />
+
+            <SolidColorBrush x:Key="AppSuccessBrush" Color="#1A7F37" />
+            <SolidColorBrush x:Key="AppSuccessAltBrush" Color="#2DA44E" />
+            <SolidColorBrush x:Key="AppWarningBrush" Color="#9A6700" />
+            <SolidColorBrush x:Key="AppDangerBrush" Color="#CF222E" />
+            <SolidColorBrush x:Key="AppInfoBrush" Color="#0969DA" />
+            <SolidColorBrush x:Key="AppNeutralBrush" Color="#656D76" />
+        </ResourceDictionary>
+
+        <!-- ── GitHub Dark ───────────────────────────────────────────────── -->
+        <ResourceDictionary x:Key="Dark">
+            <Color x:Key="AppAccentColor">#58A6FF</Color>
+            <Color x:Key="SystemAccentColor">#58A6FF</Color>
+            <Color x:Key="SystemAccentColorLight1">#6CB0FF</Color>
+            <Color x:Key="SystemAccentColorLight2">#80BAFF</Color>
+            <Color x:Key="SystemAccentColorLight3">#94C4FF</Color>
+            <Color x:Key="SystemAccentColorDark1">#4895EE</Color>
+            <Color x:Key="SystemAccentColorDark2">#3A84DD</Color>
+            <Color x:Key="SystemAccentColorDark3">#2D73CC</Color>
+
+            <SolidColorBrush x:Key="AppCanvasBrush" Color="#0D1117" />
+            <SolidColorBrush x:Key="AppSurfaceBrush" Color="#161B22" />
+            <SolidColorBrush x:Key="AppSurfaceAltBrush" Color="#1C2128" />
+            <SolidColorBrush x:Key="AppBorderBrush" Color="#30363D" />
+            <SolidColorBrush x:Key="AppTextBrush" Color="#C9D1D9" />
+            <SolidColorBrush x:Key="AppTextMutedBrush" Color="#8B949E" />
+            <SolidColorBrush x:Key="AppAccentBrush" Color="#58A6FF" />
+
+            <SolidColorBrush x:Key="AppSuccessBrush" Color="#3FB950" />
+            <SolidColorBrush x:Key="AppSuccessAltBrush" Color="#2EA043" />
+            <SolidColorBrush x:Key="AppWarningBrush" Color="#D29922" />
+            <SolidColorBrush x:Key="AppDangerBrush" Color="#F85149" />
+            <SolidColorBrush x:Key="AppInfoBrush" Color="#58A6FF" />
+            <SolidColorBrush x:Key="AppNeutralBrush" Color="#8B949E" />
+        </ResourceDictionary>
+
+    </ResourceDictionary.ThemeDictionaries>
+</ResourceDictionary>

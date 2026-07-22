@@ -1,0 +1,112 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+        Shared visual language layered on top of FluentTheme + the App* palette tokens.
+        Adds motion (page entrance), interaction feedback (hover / press), and depth
+        (elevation shadows) that the flat default theme lacks. All values use the App*
+        DynamicResource tokens so a runtime palette / theme-variant swap re-tints live.
+        Shadow values are translucent black, which reads on both Light and Dark canvases.
+    -->
+
+<!-- ── Interaction: clickable metric / detail cards (Buttons) ──────────
+         Gentle scale-up + accent border on hover, scale-down on press. Class
+         setters win over the Fluent Button ControlTheme, so the palette-driven
+         hover surface shows instead of Fluent's default grey. -->
+    <Style Selector="Button.card">
+        <Setter Property="RenderTransform" Value="scale(1)" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12" Easing="CubicEaseOut" />
+                <BrushTransition Property="Background" Duration="0:0:0.15" />
+                <BrushTransition Property="BorderBrush" Duration="0:0:0.15" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Button.card:pointerover">
+        <Setter Property="Background" Value="{DynamicResource AppSurfaceAltBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AppAccentBrush}" />
+        <Setter Property="RenderTransform" Value="scale(1.02)" />
+    </Style>
+    <Style Selector="Button.card:pressed">
+        <Setter Property="RenderTransform" Value="scale(0.98)" />
+    </Style>
+
+    <!-- ── Depth: list/detail row cards (Borders) ─────────────────────────
+         Turns the flat 1px-outline rows into solid surface cards that sit on
+         the canvas with a soft shadow, lifting on hover. Geometry (corner
+         radius, padding, per-state border colour) stays with each view's own
+         style; this only adds surface, shadow, and the transition. -->
+    <Style Selector="Border.card">
+        <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />
+        <Setter Property="BoxShadow" Value="0 1 2 0 #1F000000" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.16" />
+                <BrushTransition Property="Background" Duration="0:0:0.16" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Border.card:pointerover">
+        <Setter Property="Background" Value="{DynamicResource AppSurfaceAltBrush}" />
+        <Setter Property="BoxShadow" Value="0 6 16 0 #2E000000" />
+    </Style>
+
+    <!-- ── Notification bell: idle vs. active ─────────────────────────────
+         A monochrome icon-font bell (so Foreground actually tints it, unlike
+         the colour emoji). Idle = normal text colour; while any operation is
+         running the `.bellActive` class (bound to Notifications.HasActive)
+         tints it accent and pulses its opacity. Opacity is keyframe-safe;
+         RenderTransform would not be (keyframes only animate simple properties like Opacity). Foreground is
+         set via style, never locally, so the .bellActive setter can override. -->
+    <Style Selector="TextBlock.bell">
+        <Setter Property="Foreground" Value="{DynamicResource AppTextBrush}" />
+    </Style>
+    <Style Selector="TextBlock.bell.bellActive">
+        <Setter Property="Foreground" Value="{DynamicResource AppAccentBrush}" />
+        <Style.Animations>
+            <Animation Duration="0:0:1.3" IterationCount="Infinite" Easing="SineEaseInOut">
+                <KeyFrame Cue="0%">
+                    <Setter Property="Opacity" Value="1" />
+                </KeyFrame>
+                <KeyFrame Cue="50%">
+                    <Setter Property="Opacity" Value="0.4" />
+                </KeyFrame>
+                <KeyFrame Cue="100%">
+                    <Setter Property="Opacity" Value="1" />
+                </KeyFrame>
+            </Animation>
+        </Style.Animations>
+    </Style>
+
+    <!-- ── Icon-only ghost button (e.g. the ✕ Stop on an in-progress row) ──
+         Borderless and transparent until hovered; hover reads as "stop"
+         (danger tint) with a faint surface behind. -->
+    <Style Selector="Button.iconGhost">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Padding" Value="6,2" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextMutedBrush}" />
+    </Style>
+    <Style Selector="Button.iconGhost:pointerover">
+        <Setter Property="Foreground" Value="{DynamicResource AppDangerBrush}" />
+    </Style>
+    <Style Selector="Button.iconGhost:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />
+    </Style>
+
+    <!-- ── Navigation: sidebar items ──────────────────────────────────────
+         Rounded item chips with a smooth background transition on hover /
+         selection. Fluent already tints selection with SystemAccentColor,
+         which each palette overrides, so selection matches the active palette. -->
+    <Style Selector="ListBox.nav ListBoxItem">
+        <Setter Property="Margin" Value="2,1" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.13" />
+            </Transitions>
+        </Setter>
+    </Style>
+</Styles>

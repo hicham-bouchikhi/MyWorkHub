@@ -1,0 +1,130 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MyWorkHub.UI.ViewModels"
+             xmlns:conv="using:MyWorkHub.UI.Converters"
+             x:Class="MyWorkHub.UI.Views.EmailView"
+             x:Name="Root"
+             x:DataType="vm:EmailViewModel">
+
+    <UserControl.Resources>
+        <conv:FolderNameToBrushConverter x:Key="FolderNameToBrush" />
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+        <Style Selector="Border.emailRow">
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="12" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+        </Style>
+
+        <!-- AI summary callout: an accent-tinted panel with a bold accent left bar so it
+             reads as a distinct, AI-generated element rather than part of the email card. -->
+        <Style Selector="Border.aiSummary">
+            <Setter Property="BorderBrush" Value="{DynamicResource AppAccentBrush}" />
+            <Setter Property="BorderThickness" Value="4,1,1,1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="12" />
+        </Style>
+        <Style Selector="Border.aiSummary TextBlock.aiSummaryHeading">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource AppAccentBrush}" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,*" Margin="24">
+
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,16">
+            <TextBlock Grid.Column="0" Text="{Binding Title}" FontSize="24" FontWeight="SemiBold" VerticalAlignment="Center" />
+            <Button Grid.Column="1" Content="↻ Refresh" Command="{Binding RefreshCommand}" IsEnabled="{Binding !IsLoading}" />
+        </Grid>
+
+        <TextBox Grid.Row="1"
+                 Margin="0,0,0,16"
+                 Text="{Binding SearchText, Mode=TwoWay}"
+                 PlaceholderText="Search by sender or subject…" />
+
+        <Panel Grid.Row="2">
+
+            <!-- Error -->
+            <Border IsVisible="{Binding ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                    VerticalAlignment="Top"
+                    Background="{DynamicResource AppSurfaceAltBrush}"
+                    BorderBrush="{DynamicResource AppDangerBrush}" BorderThickness="1" CornerRadius="6" Padding="16">
+                <TextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap" />
+            </Border>
+
+            <TextBlock Text="Loading…" Opacity="0.7" IsVisible="{Binding IsLoading}" VerticalAlignment="Top" />
+
+            <TextBlock Text="No messages found." Opacity="0.7"
+                       IsVisible="{Binding IsEmpty}" VerticalAlignment="Top" />
+
+            <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding Emails}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:EmailRow">
+                            <Border Classes="emailRow card">
+                                <StackPanel Spacing="8">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                        <StackPanel Grid.Column="0" Spacing="2">
+                                            <Grid ColumnDefinitions="Auto,*">
+                                                <TextBlock Grid.Column="0" Text="⭐" Margin="0,0,6,0"
+                                                           IsVisible="{Binding IsFlagged}" />
+                                                <TextBlock Grid.Column="1" Text="{Binding From}" FontWeight="SemiBold"
+                                                           TextTrimming="CharacterEllipsis" />
+                                            </Grid>
+                                            <TextBlock Text="{Binding Subject}" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding Preview}" Opacity="0.75"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock Text="{Binding ReceivedAt}" Opacity="0.6" FontSize="12" />
+                                                <Border CornerRadius="4" Padding="5,1"
+                                                        Background="{Binding FolderName, Converter={StaticResource FolderNameToBrush}}"
+                                                        IsVisible="{Binding FolderName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                                                    <TextBlock Text="{Binding FolderName}" FontSize="11"
+                                                               Foreground="White" FontWeight="Medium" />
+                                                </Border>
+                                            </StackPanel>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
+                                            <Button Content="✨ Summarize"
+                                                    HorizontalAlignment="Stretch"
+                                                    Command="{Binding #Root.((vm:EmailViewModel)DataContext).SummarizeRowCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    IsVisible="{Binding IsSummarizing, Converter={x:Static BoolConverters.Not}}" />
+                                            <Button Content="Summarizing…" IsEnabled="False"
+                                                    HorizontalAlignment="Stretch"
+                                                    IsVisible="{Binding IsSummarizing}" />
+                                            <Button Content="Open in Outlook"
+                                                    HorizontalAlignment="Stretch"
+                                                    Command="{Binding #Root.((vm:EmailViewModel)DataContext).OpenCommand}"
+                                                    CommandParameter="{Binding}" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Border Classes="aiSummary"
+                                            IsVisible="{Binding SummaryText, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                        <Border.Background>
+                                            <SolidColorBrush Color="{DynamicResource AppAccentColor}" Opacity="0.10" />
+                                        </Border.Background>
+                                        <StackPanel Spacing="4">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <TextBlock Text="✨" FontSize="12" VerticalAlignment="Center" />
+                                                <TextBlock Classes="aiSummaryHeading" Text="AI summary" />
+                                            </StackPanel>
+                                            <SelectableTextBlock Text="{Binding SummaryText}" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+        </Panel>
+    </Grid>
+</UserControl>

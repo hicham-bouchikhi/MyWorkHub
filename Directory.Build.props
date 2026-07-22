@@ -1,0 +1,64 @@
+<Project>
+
+  <!--
+    Repo-wide build standard (per the dotnet-tdd foundation pass).
+
+    NOTE — whole-app AOT deliberately NOT enabled. The approved ARCHITECTURE.md (§5)
+    mandates EF Core, Microsoft.Graph, MSAL, Microsoft.Playwright and Quartz.NET, all
+    reflection-based and not AOT/trim-compatible (verified via the trim+AOT analyzers:
+    EF Core's DbContext and System.Text.Json.Nodes trip IL2026/IL3050, and Avalonia
+    runtime resource loading trips IL2026). So App, Infrastructure and UI omit
+    PublishAot / IsAotCompatible. The pure libraries that ARE clean — Core and
+    Presentation — opt in with IsAotCompatible=true in their own csproj, which turns the
+    IL2026/IL2091/IL3050/IL3051 rules (kept as errors in .editorconfig) into a real
+    tripwire there.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
+    <AnalysisMode>All</AnalysisMode>
+    <AnalysisLevel>latest-all</AnalysisLevel>
+
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <Deterministic>true</Deterministic>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <!--
+    NuGet audit suppression — SCOPED to a single advisory, with rationale.
+
+    GHSA-2m69-gcr7-jv3q affects the native SQLite bundled in
+    SQLitePCLRaw.lib.e_sqlite3, dragged in transitively by
+    Microsoft.EntityFrameworkCore.Sqlite 10.0.9. As of this writing 2.1.11 is the
+    LATEST published version of that package — there is no patched release to move
+    to. The advisory class (malicious-database parsing) does not apply to our
+    threat model: the SQLite file is created and owned locally by this single-user
+    desktop app and is never received from an untrusted source.
+
+    REVISIT when SQLitePCLRaw publishes a build with a patched e_sqlite3, then
+    remove this suppression and let the audit pass on its own.
+  -->
+  <!--
+    System.Security.Cryptography.Xml 10.0.9 has four new advisories (GHSA-g8r8,
+    GHSA-23rf, GHSA-8q5v, GHSA-cvvh). This is a framework/inbox package — 10.0.9 is
+    the current GA release and there is no patched version to upgrade to. The
+    affected XML-signature/encryption code paths are not invoked by this app (Graph,
+    MSAL and AzDO REST use TLS; no SAML/XML-dsig processing). Suppress until
+    Microsoft ships a patched inbox package.
+  -->
+  <ItemGroup>
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-2m69-gcr7-jv3q" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-g8r8-53c2-pm3f" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-23rf-6693-g89p" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-8q5v-6pqq-x66h" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-cvvh-rhrc-wg4q" />
+  </ItemGroup>
+
+</Project>

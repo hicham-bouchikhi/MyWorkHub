@@ -1,0 +1,61 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Tokyo Night palette (Tokyo Night Day / Night). See GitHub.axaml for the token contract. -->
+    <ResourceDictionary.ThemeDictionaries>
+
+        <!-- ── Tokyo Night Day ───────────────────────────────────────────── -->
+        <ResourceDictionary x:Key="Light">
+            <Color x:Key="AppAccentColor">#2E7DE9</Color>
+            <Color x:Key="SystemAccentColor">#2E7DE9</Color>
+            <Color x:Key="SystemAccentColorLight1">#448DEB</Color>
+            <Color x:Key="SystemAccentColorLight2">#5A9DED</Color>
+            <Color x:Key="SystemAccentColorLight3">#70ADEF</Color>
+            <Color x:Key="SystemAccentColorDark1">#2970D2</Color>
+            <Color x:Key="SystemAccentColorDark2">#2463BB</Color>
+            <Color x:Key="SystemAccentColorDark3">#1F56A4</Color>
+
+            <SolidColorBrush x:Key="AppCanvasBrush" Color="#E1E2E7" />
+            <SolidColorBrush x:Key="AppSurfaceBrush" Color="#D5D6DB" />
+            <SolidColorBrush x:Key="AppSurfaceAltBrush" Color="#CACBD1" />
+            <SolidColorBrush x:Key="AppBorderBrush" Color="#C4C8DA" />
+            <SolidColorBrush x:Key="AppTextBrush" Color="#3760BF" />
+            <SolidColorBrush x:Key="AppTextMutedBrush" Color="#848CB5" />
+            <SolidColorBrush x:Key="AppAccentBrush" Color="#2E7DE9" />
+
+            <SolidColorBrush x:Key="AppSuccessBrush" Color="#587539" />
+            <SolidColorBrush x:Key="AppSuccessAltBrush" Color="#6A8B45" />
+            <SolidColorBrush x:Key="AppWarningBrush" Color="#8C6C3E" />
+            <SolidColorBrush x:Key="AppDangerBrush" Color="#F52A65" />
+            <SolidColorBrush x:Key="AppInfoBrush" Color="#007197" />
+            <SolidColorBrush x:Key="AppNeutralBrush" Color="#848CB5" />
+        </ResourceDictionary>
+
+        <!-- ── Tokyo Night ───────────────────────────────────────────────── -->
+        <ResourceDictionary x:Key="Dark">
+            <Color x:Key="AppAccentColor">#7AA2F7</Color>
+            <Color x:Key="SystemAccentColor">#7AA2F7</Color>
+            <Color x:Key="SystemAccentColorLight1">#8CAFF8</Color>
+            <Color x:Key="SystemAccentColorLight2">#9EBCF9</Color>
+            <Color x:Key="SystemAccentColorLight3">#B0C9FA</Color>
+            <Color x:Key="SystemAccentColorDark1">#6B93E8</Color>
+            <Color x:Key="SystemAccentColorDark2">#5C84D9</Color>
+            <Color x:Key="SystemAccentColorDark3">#4D75CA</Color>
+
+            <SolidColorBrush x:Key="AppCanvasBrush" Color="#1A1B26" />
+            <SolidColorBrush x:Key="AppSurfaceBrush" Color="#24283B" />
+            <SolidColorBrush x:Key="AppSurfaceAltBrush" Color="#2A2E42" />
+            <SolidColorBrush x:Key="AppBorderBrush" Color="#292E42" />
+            <SolidColorBrush x:Key="AppTextBrush" Color="#C0CAF5" />
+            <SolidColorBrush x:Key="AppTextMutedBrush" Color="#565F89" />
+            <SolidColorBrush x:Key="AppAccentBrush" Color="#7AA2F7" />
+
+            <SolidColorBrush x:Key="AppSuccessBrush" Color="#9ECE6A" />
+            <SolidColorBrush x:Key="AppSuccessAltBrush" Color="#85B454" />
+            <SolidColorBrush x:Key="AppWarningBrush" Color="#E0AF68" />
+            <SolidColorBrush x:Key="AppDangerBrush" Color="#F7768E" />
+            <SolidColorBrush x:Key="AppInfoBrush" Color="#7DCFFF" />
+            <SolidColorBrush x:Key="AppNeutralBrush" Color="#565F89" />
+        </ResourceDictionary>
+
+    </ResourceDictionary.ThemeDictionaries>
+</ResourceDictionary>

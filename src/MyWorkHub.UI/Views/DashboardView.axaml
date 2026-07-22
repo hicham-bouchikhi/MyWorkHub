@@ -1,0 +1,160 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MyWorkHub.UI.ViewModels"
+             xmlns:models="using:MyWorkHub.Core.Models"
+             x:Class="MyWorkHub.UI.Views.DashboardView"
+             x:DataType="vm:DashboardViewModel">
+
+    <UserControl.Styles>
+        <Style Selector="Button.card">
+            <Setter Property="Padding" Value="16" />
+            <Setter Property="Margin" Value="0,0,12,12" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Top" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
+        </Style>
+        <Style Selector="Button.metricCard">
+            <Setter Property="Width" Value="180" />
+            <Setter Property="Height" Value="120" />
+        </Style>
+        <Style Selector="Button.wideCard">
+            <Setter Property="Width" Value="372" />
+            <Setter Property="MinHeight" Value="160" />
+        </Style>
+        <Style Selector="TextBlock.metric">
+            <Setter Property="FontSize" Value="36" />
+            <Setter Property="FontWeight" Value="Bold" />
+        </Style>
+        <Style Selector="TextBlock.cardTitle">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Opacity" Value="0.7" />
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer>
+        <StackPanel Margin="24" Spacing="16">
+
+            <!-- Header -->
+            <Grid ColumnDefinitions="*,Auto,Auto">
+                <TextBlock Grid.Column="0"
+                           Text="{Binding Title}"
+                           FontSize="24"
+                           FontWeight="SemiBold"
+                           VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1"
+                           Text="{Binding StatusText}"
+                           Opacity="0.7"
+                           VerticalAlignment="Center"
+                           Margin="0,0,12,0" />
+                <Button Grid.Column="2"
+                        Command="{Binding RefreshCommand}"
+                        IsEnabled="{Binding !IsRefreshing}"
+                        Content="↻ Refresh"
+                        ToolTip.Tip="Refresh all widgets now" />
+            </Grid>
+
+            <!-- Offline indicator -->
+            <Border IsVisible="{Binding IsOffline}"
+                    Background="{DynamicResource AppSurfaceAltBrush}"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="6"
+                    Padding="12,8">
+                <TextBlock Text="{Binding OfflineMessage}" TextWrapping="Wrap" />
+            </Border>
+
+            <!-- Metric widgets -->
+            <WrapPanel>
+                <Button Classes="card metricCard" Command="{Binding OpenEmailCommand}">
+                    <StackPanel Spacing="4">
+                        <TextBlock Classes="cardTitle" Text="✉  Unread email" />
+                        <TextBlock Classes="metric" Text="{Binding UnreadEmailCount}" />
+                    </StackPanel>
+                </Button>
+
+                <Button Classes="card metricCard" Command="{Binding OpenTeamsCommand}">
+                    <StackPanel Spacing="4">
+                        <TextBlock Classes="cardTitle" Text="💬  Teams unread" />
+                        <TextBlock Classes="metric" Text="{Binding TeamsUnreadCount}" />
+                    </StackPanel>
+                </Button>
+
+                <Button Classes="card metricCard" Command="{Binding OpenPullRequestsCommand}">
+                    <StackPanel Spacing="4">
+                        <TextBlock Classes="cardTitle" Text="🔀  PRs to review" />
+                        <TextBlock Classes="metric" Text="{Binding PullRequestCount}" />
+                    </StackPanel>
+                </Button>
+
+                <Button Classes="card metricCard" Command="{Binding OpenWorkItemsCommand}">
+                    <StackPanel Spacing="4">
+                        <TextBlock Classes="cardTitle" Text="📋  Work items" />
+                        <TextBlock Classes="metric" Text="{Binding WorkItemCount}" />
+                        <TextBlock FontSize="11"
+                                   Foreground="{DynamicResource AppDangerBrush}"
+                                   Text="{Binding WorkItemsOverdueText}"
+                                   IsVisible="{Binding WorkItemsOverdueText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                    </StackPanel>
+                </Button>
+
+                <Button Classes="card metricCard" Command="{Binding OpenTodoCommand}">
+                    <StackPanel Spacing="4">
+                        <TextBlock Classes="cardTitle" Text="✅  Todo due today" />
+                        <TextBlock Classes="metric" Text="{Binding TodoDueTodayCount}" />
+                    </StackPanel>
+                </Button>
+            </WrapPanel>
+
+            <!-- Detail widgets -->
+            <WrapPanel>
+                <Button Classes="card wideCard" Command="{Binding OpenEmailCommand}">
+                    <StackPanel Spacing="8">
+                        <TextBlock Classes="cardTitle" Text="✉  Important email" />
+
+                        <TextBlock Text="No unread or flagged email."
+                                   Opacity="0.6"
+                                   IsVisible="{Binding !HasImportantEmails}" />
+
+                        <ItemsControl ItemsSource="{Binding TopEmails}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="models:EmailItem">
+                                    <StackPanel Margin="0,2">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <TextBlock Text="⚑"
+                                                       Foreground="{DynamicResource AppAccentBrush}"
+                                                       IsVisible="{Binding IsFlagged}" />
+                                            <TextBlock Text="{Binding From}"
+                                                       FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding Subject}"
+                                                   Opacity="0.8"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Button>
+
+                <Button Classes="card wideCard" Command="{Binding OpenAutomationsCommand}">
+                    <StackPanel Spacing="12">
+                        <TextBlock Classes="cardTitle" Text="⚙  Automation" />
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="Next run" Opacity="0.6" FontSize="12" />
+                            <TextBlock Text="{Binding NextAutomationRun}" FontWeight="SemiBold" />
+                        </StackPanel>
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="Last run" Opacity="0.6" FontSize="12" />
+                            <TextBlock Text="{Binding LastAutomationStatus}" FontWeight="SemiBold" />
+                        </StackPanel>
+                    </StackPanel>
+                </Button>
+            </WrapPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

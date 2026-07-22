@@ -1,0 +1,83 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MyWorkHub.UI.ViewModels"
+             x:Class="MyWorkHub.UI.Views.TeamsView"
+             x:Name="Root"
+             x:DataType="vm:TeamsViewModel">
+
+    <UserControl.Styles>
+        <Style Selector="Border.chatRow">
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="12" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*" Margin="24">
+
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,16">
+            <TextBlock Grid.Column="0" Text="{Binding Title}" FontSize="24" FontWeight="SemiBold" VerticalAlignment="Center" />
+            <Button Grid.Column="1" Content="↻ Refresh" Command="{Binding RefreshCommand}" IsEnabled="{Binding !IsLoading}" />
+        </Grid>
+
+        <Panel Grid.Row="1">
+
+            <!-- Error -->
+            <Border IsVisible="{Binding ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                    VerticalAlignment="Top"
+                    Background="{DynamicResource AppSurfaceAltBrush}"
+                    BorderBrush="{DynamicResource AppDangerBrush}" BorderThickness="1" CornerRadius="6" Padding="16">
+                <TextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap" />
+            </Border>
+
+            <TextBlock Text="Loading…" Opacity="0.7" IsVisible="{Binding IsLoading}" VerticalAlignment="Top" />
+
+            <TextBlock Text="No unread chats." Opacity="0.7"
+                       IsVisible="{Binding IsEmpty}" VerticalAlignment="Top" />
+
+            <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding Chats}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:TeamsChatRow">
+                            <Border Classes="chatRow card">
+                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+
+                                    <!-- Unread badge -->
+                                    <Border Grid.Column="0"
+                                            VerticalAlignment="Center"
+                                            IsVisible="{Binding HasUnread}"
+                                            Width="28" Height="28"
+                                            CornerRadius="14"
+                                            Background="{DynamicResource SystemAccentColor}">
+                                        <TextBlock Text="{Binding UnreadCount}" Foreground="White"
+                                                   FontSize="12" FontWeight="SemiBold"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+
+                                    <StackPanel Grid.Column="1" Spacing="2">
+                                        <TextBlock Text="{Binding ChatName}" FontWeight="SemiBold"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding LastSenderName}" Opacity="0.75"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding MessagePreview}" Opacity="0.75"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding ReceivedAt}" Opacity="0.6" FontSize="12" />
+                                    </StackPanel>
+
+                                    <Button Grid.Column="2"
+                                            VerticalAlignment="Center"
+                                            Content="Open in Teams"
+                                            Command="{Binding #Root.((vm:TeamsViewModel)DataContext).OpenCommand}"
+                                            CommandParameter="{Binding}" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+        </Panel>
+    </Grid>
+</UserControl>
