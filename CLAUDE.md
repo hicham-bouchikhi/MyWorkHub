@@ -99,12 +99,35 @@ public record EmailItem(string Id, string From, string Subject, string Preview,
 }
 ```
 
+**`IPrReviewService.ReviewAsync`** — one additional optional parameter, inserted before `ct` (analyzers require `CancellationToken` last):
+```csharp
+Task<string> ReviewAsync(PullRequestItem pr, IProgress<string>? progress = null,
+    string? agentFilePath = null, CancellationToken ct = default);
+```
+`agentFilePath` is a one-off, per-call override of the review-agent Markdown template (e.g. a
+different `.md` chosen for a single PR from the Pull Requests list). Resolution order in
+`ClaudeCodePrReviewService.ResolveAgentTemplate`: `agentFilePath` override → configured
+`WorkspaceOptions.ReviewAgentPath` → seeded built-in default (`AppPaths.ReviewAgentPath`) →
+hardcoded `DEFAULT_AGENT_TEMPLATE` constant. A configured/override path that doesn't resolve is
+skipped (with a `progress` warning) rather than failing the review.
+
+**`WorkspaceSettings` record / `IWorkspaceSettingsService.Save`** — one additional field/parameter:
+```csharp
+public sealed record WorkspaceSettings(
+    string WorkFolderPath, string ClaudeExecutablePath, string ReviewModelId, string ReviewAgentPath);
+
+void Save(string workFolderPath, string claudeExecutablePath, string reviewModelId, string reviewAgentPath);
+```
+`ReviewAgentPath` is the user-configured global review-agent Markdown file; empty means "use the
+built-in default." Settings UI: Settings → Preferences → Code review → "Review agent" (Browse/Reset).
+
 **New interfaces** (not in ARCHITECTURE.md):
 - `IEmailSummaryService` — AI digest of a list of `EmailItem` via Claude CLI
 - `IEmailSettingsService` — reads/saves watched mail folder IDs (to `appsettings.json`, live update)
 - `IPrReviewService` — Claude Code PR review: clone/fetch repo, checkout branch, run `claude`, return HTML report path
-- `IWorkspaceSettingsService` — reads/saves Claude CLI path + work folder + review model ID (to `appsettings.json`, live update)
+- `IWorkspaceSettingsService` — reads/saves Claude CLI path + work folder + review model ID + review agent path (to `appsettings.json`, live update)
 - `ISeenMentionRepository` — persists which AzDO comment IDs the user has already opened (`SeenMentions` SQLite table, PK = `CommentId`)
+- `IFilePicker` — cross-platform single-file chooser (mirrors `IFolderPicker`), implemented as `AvaloniaFilePicker` over `IStorageProvider.OpenFilePickerAsync`; used for browsing to a review-agent `.md` file, globally in Settings or per-PR from the Pull Requests list
 
 **New DTO**: `WorkItemMention(int WorkItemId, string WorkItemTitle, string WorkItemUrl, int CommentId, string AuthorDisplayName, DateTime CreatedAt, string TextSnippet)`
 
@@ -141,7 +164,7 @@ Both the email digest summary and PR code review delegate to the `claude` binary
 - Pass the system prompt via `--system-prompt` (CLI argument), never via stdin, so attacker-controlled content cannot override instructions.
 - For the email summariser, all dangerous tools are denied (`--disallowedTools Bash,Edit,Write,NotebookEdit,WebFetch,WebSearch,Task`) and ambient MCP is disabled (`--strict-mcp-config`).
 - Email content is quarantined inside a **nonce-delimited block** (random 16-byte hex boundary per call, via `EmailSummaryPrompt.BuildUserMessage`) — the nonce prevents email text from forging the closing marker to escape the block.
-- PR review uses `src/MyWorkHub.App/review-agent.md` as the instruction file; `ClaudeCodePrReviewService` clones/fetches the repo into `WorkFolderPath` and checks out the source branch before invoking `claude`.
+- PR review uses `src/MyWorkHub.App/review-agent.md` as the default instruction file (seeded to `AppPaths.ReviewAgentPath`); `ClaudeCodePrReviewService` clones/fetches the repo into `WorkFolderPath` and checks out the source branch before invoking `claude`. A user-configured `Workspace.ReviewAgentPath` or a per-PR override takes priority over this default — see the `IPrReviewService.ReviewAsync` correction above.
 
 **`appsettings.json` sections added after docs/architecture.md §10:**
 
@@ -149,7 +172,8 @@ Both the email digest summary and PR code review delegate to the `claude` binary
 "Workspace": {
   "WorkFolderPath": "",
   "ClaudeExecutablePath": "",
-  "ReviewModelId": "claude-sonnet-5"
+  "ReviewModelId": "claude-sonnet-5",
+  "ReviewAgentPath": ""
 },
 "Email": {
   "FolderIds": [ "inbox" ],

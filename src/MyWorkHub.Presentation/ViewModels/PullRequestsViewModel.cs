@@ -18,6 +18,7 @@ public sealed partial class PullRequestsViewModel : PageViewModel
     private readonly IAzureDevOpsSettingsService? _settings;
     private readonly IBrowserLauncher? _launcher;
     private readonly IPrReviewService? _reviewService;
+    private readonly IFilePicker? _filePicker;
     private readonly INotificationService? _notification;
     private readonly NotificationCenterViewModel? _notificationCenter;
     private readonly ILogger<PullRequestsViewModel>? _logger;
@@ -44,6 +45,7 @@ public sealed partial class PullRequestsViewModel : PageViewModel
         ILogger<PullRequestsViewModel>? logger = null,
         IAzureDevOpsSettingsService? settings = null,
         IPrReviewService? reviewService = null,
+        IFilePicker? filePicker = null,
         INotificationService? notification = null,
         NotificationCenterViewModel? notificationCenter = null)
         : base("Pull Requests")
@@ -54,6 +56,7 @@ public sealed partial class PullRequestsViewModel : PageViewModel
         _logger = logger;
         _settings = settings;
         _reviewService = reviewService;
+        _filePicker = filePicker;
         _notification = notification;
         _notificationCenter = notificationCenter;
     }
@@ -174,7 +177,7 @@ public sealed partial class PullRequestsViewModel : PageViewModel
                 return;
             }
 
-            var htmlPath = await _reviewService.ReviewAsync(row.Source, progress, cts.Token).ConfigureAwait(true);
+            var htmlPath = await _reviewService.ReviewAsync(row.Source, progress, row.AgentOverridePath, cts.Token).ConfigureAwait(true);
             _launcher?.Open(htmlPath);
             row.AppendReviewStep("Done — report opened in browser.");
             _notification?.Notify("Review", $"{label}: review ready — opened in browser.", NotificationSeverity.SUCCESS);
@@ -211,6 +214,31 @@ public sealed partial class PullRequestsViewModel : PageViewModel
 
         LogReviewCancelRequested(row.Source.Id);
         row.CancelReview();
+    }
+
+    [RelayCommand]
+    private async Task ChooseReviewAgentAsync(PullRequestRow? row)
+    {
+        if (row is null || _filePicker is null)
+        {
+            return;
+        }
+
+        var start = string.IsNullOrWhiteSpace(row.AgentOverridePath) ? null : row.AgentOverridePath;
+        var picked = await _filePicker.PickFileAsync("Select a review agent for this PR", start, [".md"]).ConfigureAwait(true);
+        if (!string.IsNullOrWhiteSpace(picked))
+        {
+            row.AgentOverridePath = picked;
+        }
+    }
+
+    [RelayCommand]
+    private static void ClearReviewAgentOverride(PullRequestRow? row)
+    {
+        if (row is not null)
+        {
+            row.AgentOverridePath = null;
+        }
     }
 
     private void LogReviewCancelRequested(int pullRequestId)

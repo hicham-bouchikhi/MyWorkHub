@@ -342,9 +342,13 @@ internal sealed class FakePrReviewService : IPrReviewService
 
     public Task<PrerequisiteCheckResult> CheckPrerequisitesAsync() => Task.FromResult(_prerequisites);
 
-    public Task<string> ReviewAsync(PullRequestItem pr, IProgress<string>? progress = null, CancellationToken ct = default)
+    public string? LastAgentFilePath { get; private set; }
+
+    public Task<string> ReviewAsync(
+        PullRequestItem pr, IProgress<string>? progress = null, string? agentFilePath = null, CancellationToken ct = default)
     {
         ReviewCalled = true;
+        LastAgentFilePath = agentFilePath;
         progress?.Report("fake step");
         return _throw ? throw new InvalidOperationException("boom") : Task.FromResult(_htmlPath);
     }
@@ -366,6 +370,25 @@ internal sealed class FakeFolderPicker : IFolderPicker
     }
 }
 
+/// <summary>Returns a canned file path (or null to simulate cancel).</summary>
+internal sealed class FakeFilePicker : IFilePicker
+{
+    private readonly string? _result;
+
+    public FakeFilePicker(string? result = null) => _result = result;
+
+    public string? LastStartPath { get; private set; }
+
+    public IReadOnlyList<string>? LastExtensions { get; private set; }
+
+    public Task<string?> PickFileAsync(string title, string? startPath = null, IReadOnlyList<string>? extensions = null)
+    {
+        LastStartPath = startPath;
+        LastExtensions = extensions;
+        return Task.FromResult(_result);
+    }
+}
+
 /// <summary>Blocks inside <see cref="ReviewAsync"/> until its token is cancelled.</summary>
 internal sealed class CancellingPrReviewService : IPrReviewService
 {
@@ -377,7 +400,8 @@ internal sealed class CancellingPrReviewService : IPrReviewService
     public Task<PrerequisiteCheckResult> CheckPrerequisitesAsync() =>
         Task.FromResult(new PrerequisiteCheckResult(true, true, null));
 
-    public async Task<string> ReviewAsync(PullRequestItem pr, IProgress<string>? progress = null, CancellationToken ct = default)
+    public async Task<string> ReviewAsync(
+        PullRequestItem pr, IProgress<string>? progress = null, string? agentFilePath = null, CancellationToken ct = default)
     {
         _started.TrySetResult();
         await Task.Delay(Timeout.Infinite, ct).ConfigureAwait(false); // cancellation surfaces as OperationCanceledException

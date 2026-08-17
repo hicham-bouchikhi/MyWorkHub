@@ -4,7 +4,8 @@ namespace MyWorkHub.Core.Abstractions;
 public sealed record WorkspaceSettings(
     string WorkFolderPath,
     string ClaudeExecutablePath,
-    string ReviewModelId);
+    string ReviewModelId,
+    string ReviewAgentPath);
 
 /// <summary>
 /// Reads and persists the code-review workspace settings. Values go to
@@ -14,9 +15,9 @@ public sealed record WorkspaceSettings(
 /// </summary>
 public interface IWorkspaceSettingsService
 {
-    /// <summary>The current work folder, claude executable path, and review model id.</summary>
+    /// <summary>The current work folder, claude executable path, review model id, and review agent path.</summary>
     WorkspaceSettings Get();
 
     /// <summary>Persists the workspace settings and refreshes the live configuration.</summary>
-    void Save(string workFolderPath, string claudeExecutablePath, string reviewModelId);
+    void Save(string workFolderPath, string claudeExecutablePath, string reviewModelId, string reviewAgentPath);
 }

@@ -44,6 +44,21 @@ public sealed partial class PullRequestRow : ObservableObject
     [ObservableProperty]
     private bool _hasReviewLog;
 
+    /// <summary>
+    /// Optional per-PR review-agent override, picked via a file browser. Session-only — not
+    /// persisted; when unset, the review falls back to the configured/default agent.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(AgentLabel))]
+    [NotifyPropertyChangedFor(nameof(HasAgentOverride))]
+    private string? _agentOverridePath;
+
+    /// <summary>True when this row has a one-off review-agent override set.</summary>
+    public bool HasAgentOverride => AgentOverridePath is not null;
+
+    /// <summary>Display label for the current agent choice: "Default" or the override's file name.</summary>
+    public string AgentLabel => AgentOverridePath is null ? "Default" : Path.GetFileNameWithoutExtension(AgentOverridePath);
+
     /// <summary>Starts a review: resets the log and stores the token source used by <see cref="CancelReview"/>.</summary>
     public void BeginReview(CancellationTokenSource cts)
     {

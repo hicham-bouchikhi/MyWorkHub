@@ -25,6 +25,7 @@ public sealed partial class SettingsViewModel : PageViewModel
     private readonly IGraphConnectionService? _graphConnection;
     private readonly IWorkspaceSettingsService? _workspaceSettings;
     private readonly IFolderPicker? _folderPicker;
+    private readonly IFilePicker? _filePicker;
     private readonly IEmailService? _emailService;
     private readonly IEmailSettingsService? _emailSettings;
     private readonly IThemeService? _themeService;
@@ -41,6 +42,9 @@ public sealed partial class SettingsViewModel : PageViewModel
 
     [ObservableProperty]
     private string _reviewModelId = "claude-sonnet-5";
+
+    [ObservableProperty]
+    private string _reviewAgentPath = "";
 
     // ── Preferences: theme ──────────────────────────────────────────────────
     public IReadOnlyList<string> ThemeOptions { get; } = ["System", "Light", "Dark"];
@@ -102,6 +106,7 @@ public sealed partial class SettingsViewModel : PageViewModel
         IOptions<UiOptions>? uiOptions = null,
         IWorkspaceSettingsService? workspaceSettings = null,
         IFolderPicker? folderPicker = null,
+        IFilePicker? filePicker = null,
         IEmailService? emailService = null,
         IEmailSettingsService? emailSettings = null,
         IThemeService? themeService = null)
@@ -111,6 +116,7 @@ public sealed partial class SettingsViewModel : PageViewModel
         _graphConnection = graphConnection;
         _workspaceSettings = workspaceSettings;
         _folderPicker = folderPicker;
+        _filePicker = filePicker;
         _emailService = emailService;
         _emailSettings = emailSettings;
         _themeService = themeService;
@@ -136,6 +142,7 @@ public sealed partial class SettingsViewModel : PageViewModel
             ReviewModelId = string.IsNullOrWhiteSpace(workspace.ReviewModelId)
                 ? "claude-sonnet-5"
                 : workspace.ReviewModelId;
+            ReviewAgentPath = workspace.ReviewAgentPath;
         }
 
         if (_graphConnection is not null)
@@ -248,6 +255,25 @@ public sealed partial class SettingsViewModel : PageViewModel
     }
 
     [RelayCommand]
+    private async Task BrowseReviewAgentAsync()
+    {
+        if (_filePicker is null)
+        {
+            return;
+        }
+
+        var start = string.IsNullOrWhiteSpace(ReviewAgentPath) ? null : ReviewAgentPath;
+        var picked = await _filePicker.PickFileAsync("Select the review agent file", start, [".md"]);
+        if (!string.IsNullOrWhiteSpace(picked))
+        {
+            ReviewAgentPath = picked;
+        }
+    }
+
+    [RelayCommand]
+    private void ResetReviewAgent() => ReviewAgentPath = "";
+
+    [RelayCommand]
     private void Save()
     {
         if (_settings is null && _workspaceSettings is null)
@@ -271,7 +297,7 @@ public sealed partial class SettingsViewModel : PageViewModel
             PersonalAccessTokenInput = "";
         }
 
-        _workspaceSettings?.Save(WorkFolderPath, ClaudeExecutablePath, ReviewModelId);
+        _workspaceSettings?.Save(WorkFolderPath, ClaudeExecutablePath, ReviewModelId, ReviewAgentPath);
 
         StatusMessage = $"Saved at {DateTime.Now.ToString("HH:mm:ss", CultureInfo.CurrentCulture)}.";
     }

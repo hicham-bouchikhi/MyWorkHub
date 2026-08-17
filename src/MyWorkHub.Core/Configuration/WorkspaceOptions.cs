@@ -17,4 +17,10 @@ public sealed class WorkspaceOptions
 
     /// <summary>Model id passed to <c>claude --model</c> for reviews.</summary>
     public string ReviewModelId { get; set; } = "claude-sonnet-5";
+
+    /// <summary>
+    /// Full path to a custom review-agent Markdown template. Empty means fall back to the
+    /// built-in default (<see cref="MyWorkHub.Core.AppPaths.ReviewAgentPath"/>).
+    /// </summary>
+    public string ReviewAgentPath { get; set; } = "";
 }

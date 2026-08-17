@@ -130,6 +130,16 @@
                                                 IsVisible="{Binding IsReviewing}"
                                                 Command="{Binding #Root.((vm:PullRequestsViewModel)DataContext).CancelReviewCommand}"
                                                 CommandParameter="{Binding}" />
+                                        <Button Content="{Binding AgentLabel, StringFormat='Agent: {0}'}"
+                                                IsVisible="{Binding !IsReviewing}"
+                                                ToolTip.Tip="Choose a review agent (.md) for this PR"
+                                                Command="{Binding #Root.((vm:PullRequestsViewModel)DataContext).ChooseReviewAgentCommand}"
+                                                CommandParameter="{Binding}" />
+                                        <Button Content="✕"
+                                                IsVisible="{Binding HasAgentOverride}"
+                                                ToolTip.Tip="Reset to the default review agent"
+                                                Command="{Binding #Root.((vm:PullRequestsViewModel)DataContext).ClearReviewAgentOverrideCommand}"
+                                                CommandParameter="{Binding}" />
                                     </StackPanel>
 
                                     <Button Grid.Column="3"

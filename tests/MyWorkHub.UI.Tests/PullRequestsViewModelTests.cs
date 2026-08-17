@@ -126,6 +126,72 @@ public sealed class PullRequestsViewModelTests
     }
 
     [Fact]
+    public async Task Review_passes_no_agent_override_by_default()
+    {
+        var review = new FakePrReviewService();
+        var vm = new PullRequestsViewModel(new FakeAzureDevOpsService(), WithPat(), reviewService: review);
+        var row = PullRequestRow.From(Pr(7, 0));
+
+        await vm.ReviewPrCommand.ExecuteAsync(row);
+
+        Assert.Null(review.LastAgentFilePath);
+        Assert.Equal("Default", row.AgentLabel);
+    }
+
+    [Fact]
+    public async Task Review_passes_the_row_agent_override_to_the_review_service()
+    {
+        var review = new FakePrReviewService();
+        var vm = new PullRequestsViewModel(new FakeAzureDevOpsService(), WithPat(), reviewService: review);
+        var row = PullRequestRow.From(Pr(7, 0));
+        row.AgentOverridePath = @"C:\agents\security-review.md";
+
+        await vm.ReviewPrCommand.ExecuteAsync(row);
+
+        Assert.Equal(@"C:\agents\security-review.md", review.LastAgentFilePath);
+        Assert.Equal("security-review", row.AgentLabel);
+    }
+
+    [Fact]
+    public async Task ChooseReviewAgent_sets_the_row_override_when_a_file_is_picked()
+    {
+        var picker = new FakeFilePicker(@"C:\agents\security-review.md");
+        var vm = new PullRequestsViewModel(new FakeAzureDevOpsService(), WithPat(), filePicker: picker);
+        var row = PullRequestRow.From(Pr(7, 0));
+
+        await vm.ChooseReviewAgentCommand.ExecuteAsync(row);
+
+        Assert.Equal(@"C:\agents\security-review.md", row.AgentOverridePath);
+        Assert.True(row.HasAgentOverride);
+    }
+
+    [Fact]
+    public async Task ChooseReviewAgent_leaves_the_row_unchanged_when_the_picker_is_cancelled()
+    {
+        var picker = new FakeFilePicker(result: null);
+        var vm = new PullRequestsViewModel(new FakeAzureDevOpsService(), WithPat(), filePicker: picker);
+        var row = PullRequestRow.From(Pr(7, 0));
+
+        await vm.ChooseReviewAgentCommand.ExecuteAsync(row);
+
+        Assert.Null(row.AgentOverridePath);
+        Assert.False(row.HasAgentOverride);
+    }
+
+    [Fact]
+    public void ClearReviewAgentOverride_resets_the_row_to_the_default()
+    {
+        var vm = new PullRequestsViewModel(new FakeAzureDevOpsService(), WithPat());
+        var row = PullRequestRow.From(Pr(7, 0));
+        row.AgentOverridePath = @"C:\agents\security-review.md";
+
+        vm.ClearReviewAgentOverrideCommand.Execute(row);
+
+        Assert.Null(row.AgentOverridePath);
+        Assert.Equal("Default", row.AgentLabel);
+    }
+
+    [Fact]
     public async Task Cancel_review_requests_cancellation_of_the_running_review()
     {
         var launcher = new FakeBrowserLauncher();

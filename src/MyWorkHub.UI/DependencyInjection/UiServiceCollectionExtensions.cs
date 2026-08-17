@@ -23,6 +23,7 @@ public static class UiServiceCollectionExtensions
 
         // Avalonia host adapters for the Core seams the presentation layer depends on.
         services.AddSingleton<IFolderPicker, AvaloniaFolderPicker>();
+        services.AddSingleton<IFilePicker, AvaloniaFilePicker>();
         services.AddSingleton<IThemeService, AvaloniaThemeService>();
 
         // One concrete toast service exposed through the Core interface, so the main

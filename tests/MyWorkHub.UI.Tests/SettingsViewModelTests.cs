@@ -37,6 +37,39 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
+    public async Task Browse_review_agent_sets_the_path_when_a_file_is_picked()
+    {
+        var picker = new FakeFilePicker(@"C:\agents\security-review.md");
+        var vm = new SettingsViewModel(filePicker: picker);
+
+        await vm.BrowseReviewAgentCommand.ExecuteAsync(null);
+
+        Assert.Equal(@"C:\agents\security-review.md", vm.ReviewAgentPath);
+        Assert.Equal([".md"], picker.LastExtensions);
+    }
+
+    [Fact]
+    public async Task Browse_review_agent_keeps_the_path_when_the_picker_is_cancelled()
+    {
+        var picker = new FakeFilePicker(result: null);
+        var vm = new SettingsViewModel(filePicker: picker) { ReviewAgentPath = @"C:\agents\existing.md" };
+
+        await vm.BrowseReviewAgentCommand.ExecuteAsync(null);
+
+        Assert.Equal(@"C:\agents\existing.md", vm.ReviewAgentPath);
+    }
+
+    [Fact]
+    public void ResetReviewAgent_clears_the_path()
+    {
+        var vm = new SettingsViewModel { ReviewAgentPath = @"C:\agents\existing.md" };
+
+        vm.ResetReviewAgentCommand.Execute(null);
+
+        Assert.Equal("", vm.ReviewAgentPath);
+    }
+
+    [Fact]
     public void Constructor_selects_palette_display_name_from_options_key()
     {
         var options = Options.Create(new UiOptions { Palette = "OneDark" });

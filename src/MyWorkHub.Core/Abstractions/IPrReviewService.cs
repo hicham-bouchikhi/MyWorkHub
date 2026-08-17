@@ -24,8 +24,15 @@ public interface IPrReviewService
     /// <summary>
     /// Reviews <paramref name="pr"/> and returns the path to the generated HTML report.
     /// Each step (clone/fetch, checkout, running Claude, generating the report) is reported
-    /// through <paramref name="progress"/> so the UI can show a live activity log. Cancelling
-    /// <paramref name="ct"/> stops the run and terminates any child git/claude process.
+    /// through <paramref name="progress"/> so the UI can show a live activity log. When
+    /// <paramref name="agentFilePath"/> is set and resolves to an existing file, it is used as
+    /// the review instructions for this call only, taking priority over the configured
+    /// workspace default and the built-in template. Cancelling <paramref name="ct"/> stops the
+    /// run and terminates any child git/claude process.
     /// </summary>
-    Task<string> ReviewAsync(PullRequestItem pr, IProgress<string>? progress = null, CancellationToken ct = default);
+    Task<string> ReviewAsync(
+        PullRequestItem pr,
+        IProgress<string>? progress = null,
+        string? agentFilePath = null,
+        CancellationToken ct = default);
 }

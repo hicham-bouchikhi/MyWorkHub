@@ -23,24 +23,27 @@ public sealed class WorkspaceSettingsService : IWorkspaceSettingsService
     }
 
     public WorkspaceSettings Get()
-        => new(_options.WorkFolderPath, _options.ClaudeExecutablePath, _options.ReviewModelId);
+        => new(_options.WorkFolderPath, _options.ClaudeExecutablePath, _options.ReviewModelId, _options.ReviewAgentPath);
 
-    public void Save(string workFolderPath, string claudeExecutablePath, string reviewModelId)
+    public void Save(string workFolderPath, string claudeExecutablePath, string reviewModelId, string reviewAgentPath)
     {
         ArgumentNullException.ThrowIfNull(workFolderPath);
         ArgumentNullException.ThrowIfNull(claudeExecutablePath);
         ArgumentNullException.ThrowIfNull(reviewModelId);
+        ArgumentNullException.ThrowIfNull(reviewAgentPath);
 
         var cleanedFolder = workFolderPath.Trim();
         var cleanedExe = claudeExecutablePath.Trim();
         var cleanedModel = reviewModelId.Trim();
+        var cleanedAgentPath = reviewAgentPath.Trim();
 
         // Update the live (shared) options so the review service sees the change at once.
         _options.WorkFolderPath = cleanedFolder;
         _options.ClaudeExecutablePath = cleanedExe;
         _options.ReviewModelId = cleanedModel;
+        _options.ReviewAgentPath = cleanedAgentPath;
 
         // Persist for the next launch.
-        UserAppSettingsFile.SaveWorkspace(cleanedFolder, cleanedExe, cleanedModel);
+        UserAppSettingsFile.SaveWorkspace(cleanedFolder, cleanedExe, cleanedModel, cleanedAgentPath);
     }
 }

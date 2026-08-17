@@ -46,11 +46,13 @@ public static class UserAppSettingsFile
     }
 
     /// <summary>Persists the code-review workspace settings, leaving the rest of the file intact.</summary>
-    public static void SaveWorkspace(string workFolderPath, string claudeExecutablePath, string reviewModelId)
+    public static void SaveWorkspace(
+        string workFolderPath, string claudeExecutablePath, string reviewModelId, string reviewAgentPath)
     {
         ArgumentNullException.ThrowIfNull(workFolderPath);
         ArgumentNullException.ThrowIfNull(claudeExecutablePath);
         ArgumentNullException.ThrowIfNull(reviewModelId);
+        ArgumentNullException.ThrowIfNull(reviewAgentPath);
 
         var root = Load();
 
@@ -58,6 +60,7 @@ public static class UserAppSettingsFile
         workspace["WorkFolderPath"] = workFolderPath;
         workspace["ClaudeExecutablePath"] = claudeExecutablePath;
         workspace["ReviewModelId"] = reviewModelId;
+        workspace["ReviewAgentPath"] = reviewAgentPath;
         root["Workspace"] = workspace;
 
         File.WriteAllText(AppPaths.UserAppSettingsPath, root.ToJsonString(_writeOptions));

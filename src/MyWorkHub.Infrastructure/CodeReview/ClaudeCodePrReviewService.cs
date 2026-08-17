@@ -59,7 +59,11 @@ public sealed partial class ClaudeCodePrReviewService : IPrReviewService
         return new PrerequisiteCheckResult(gitFound, claudeFound, workFolderIssue);
     }
 
-    public async Task<string> ReviewAsync(PullRequestItem pr, IProgress<string>? progress = null, CancellationToken ct = default)
+    public async Task<string> ReviewAsync(
+        PullRequestItem pr,
+        IProgress<string>? progress = null,
+        string? agentFilePath = null,
+        CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(pr);
 
@@ -82,7 +86,7 @@ public sealed partial class ClaudeCodePrReviewService : IPrReviewService
         await CloneOrFetchAsync(pr, repoDir, pat, progress, ct).ConfigureAwait(false);
         await CheckoutSourceBranchAsync(pr, repoDir, progress, ct).ConfigureAwait(false);
 
-        var prompt = BuildPrompt(pr, repoDir);
+        var prompt = BuildPrompt(pr, repoDir, agentFilePath, progress);
         var markdown = await RunClaudeAsync(prompt, repoDir, progress, ct).ConfigureAwait(false);
 
         progress?.Report("Generating HTML report");
@@ -156,9 +160,9 @@ public sealed partial class ClaudeCodePrReviewService : IPrReviewService
         return result.StdOut;
     }
 
-    private string BuildPrompt(PullRequestItem pr, string repoDir)
+    private string BuildPrompt(PullRequestItem pr, string repoDir, string? agentFilePath, IProgress<string>? progress)
     {
-        var template = ReadAgentTemplate(repoDir);
+        var template = ReadAgentTemplate(repoDir, agentFilePath, progress);
         var builder = new StringBuilder();
         builder.Append(CultureInfo.InvariantCulture, $"Review this Azure DevOps pull request.\n\n");
         builder.Append(CultureInfo.InvariantCulture, $"Repository: {pr.Repository}\n");
@@ -171,14 +175,12 @@ public sealed partial class ClaudeCodePrReviewService : IPrReviewService
 
     /// <summary>
     /// Returns the review-agent template, seeding a copy into the repo root (if absent) so a
-    /// human inspecting the clone can see the instructions. Falls back to a minimal built-in
-    /// template when the seeded user file is missing.
+    /// human inspecting the clone can see the instructions. See <see cref="ResolveAgentTemplate"/>
+    /// for the resolution order.
     /// </summary>
-    private string ReadAgentTemplate(string repoDir)
+    private string ReadAgentTemplate(string repoDir, string? agentFilePath, IProgress<string>? progress)
     {
-        var template = File.Exists(AppPaths.ReviewAgentPath)
-            ? File.ReadAllText(AppPaths.ReviewAgentPath)
-            : DEFAULT_AGENT_TEMPLATE;
+        var template = ResolveAgentTemplate(agentFilePath, progress);
 
         try
         {
@@ -194,6 +196,41 @@ public sealed partial class ClaudeCodePrReviewService : IPrReviewService
         }
 
         return template;
+    }
+
+    /// <summary>
+    /// Resolves the review-agent template with the following priority: the per-call
+    /// <paramref name="agentFilePath"/> override, then the configured
+    /// <see cref="WorkspaceOptions.ReviewAgentPath"/>, then the seeded built-in default at
+    /// <see cref="AppPaths.ReviewAgentPath"/>, then the hardcoded <see cref="DEFAULT_AGENT_TEMPLATE"/>.
+    /// A configured/override path that doesn't resolve to an existing file is skipped (with a
+    /// warning reported through <paramref name="progress"/>) rather than failing the review.
+    /// </summary>
+    private string ResolveAgentTemplate(string? agentFilePath, IProgress<string>? progress)
+    {
+        if (!string.IsNullOrWhiteSpace(agentFilePath))
+        {
+            if (File.Exists(agentFilePath))
+            {
+                progress?.Report($"Using review agent override: {agentFilePath}");
+                return File.ReadAllText(agentFilePath);
+            }
+
+            progress?.Report($"Review agent override '{agentFilePath}' was not found — falling back to the configured/default agent.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(_options.ReviewAgentPath))
+        {
+            if (File.Exists(_options.ReviewAgentPath))
+            {
+                progress?.Report($"Using configured review agent: {_options.ReviewAgentPath}");
+                return File.ReadAllText(_options.ReviewAgentPath);
+            }
+
+            progress?.Report($"Configured review agent '{_options.ReviewAgentPath}' was not found — falling back to the built-in default.");
+        }
+
+        return File.Exists(AppPaths.ReviewAgentPath) ? File.ReadAllText(AppPaths.ReviewAgentPath) : DEFAULT_AGENT_TEMPLATE;
     }
 
     private string? CheckWorkFolder()
