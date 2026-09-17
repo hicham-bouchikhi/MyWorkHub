@@ -155,7 +155,11 @@ public partial class MarkdownEditorControl : UserControl
     {
         if (!_webViewReady) return;
         var escaped = JsonSerializer.Serialize(EditorTextBox.Text ?? string.Empty);
-        await PreviewWebView.InvokeScript($"update({escaped})");
+        // WebKitGTK can signal navigation complete just before inline scripts are
+        // visible to InvokeScript. Queue the update and only call the handler once
+        // the document has finished defining it.
+        await PreviewWebView.InvokeScript(
+            $"window.setTimeout(function() {{ if (typeof window.update === 'function') window.update({escaped}); }}, 0);");
     }
 
     // ── Toolbar: headings ─────────────────────────────────────────────────

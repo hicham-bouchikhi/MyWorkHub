@@ -40,7 +40,22 @@ public static class MsalPublicClientFactory
     public static async Task RegisterTokenCacheAsync(IPublicClientApplication app)
     {
         ArgumentNullException.ThrowIfNull(app);
-        var storage = new StorageCreationPropertiesBuilder(CACHE_FILE_NAME, AppPaths.RootDir).Build();
+        var storageBuilder = new StorageCreationPropertiesBuilder(CACHE_FILE_NAME, AppPaths.RootDir);
+
+        // The extensions library needs explicit libsecret metadata on Linux. Without
+        // it, the default builder leaves the keyring attributes null and startup
+        // fails before the shell is displayed.
+        if (OperatingSystem.IsLinux())
+        {
+            storageBuilder.WithLinuxKeyring(
+                schemaName: "com.myworkhub.app",
+                collection: MsalCacheHelper.LinuxKeyRingDefaultCollection,
+                secretLabel: "MyWorkHub token cache",
+                attribute1: new KeyValuePair<string, string>("product", "MyWorkHub"),
+                attribute2: new KeyValuePair<string, string>("version", "1"));
+        }
+
+        var storage = storageBuilder.Build();
         var helper = await MsalCacheHelper.CreateAsync(storage).ConfigureAwait(false);
         helper.RegisterCache(app.UserTokenCache);
     }
