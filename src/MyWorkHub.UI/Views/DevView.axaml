@@ -11,12 +11,44 @@
             <StackPanel>
                 <TextBlock Text="{Binding Title}"
                            FontSize="22" FontWeight="SemiBold" />
-                <TextBlock Text="Component showcase — MarkdownEditorControl"
+                <TextBlock Text="Component showcase and testing utilities"
                            FontSize="11" Opacity="0.45" Margin="0,2,0,0" />
             </StackPanel>
         </Border>
 
-        <controls:MarkdownEditorControl Grid.Row="1" />
+        <ScrollViewer Grid.Row="1" Padding="20,16">
+            <StackPanel Spacing="24">
+
+                <!-- Notification Testing -->
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Notifications" FontSize="16" FontWeight="SemiBold" />
+                    <TextBlock Text="Test notification rendering with different severity levels."
+                               FontSize="12" Opacity="0.7" />
+                    <StackPanel Spacing="6">
+                        <Button Content="Test Info Notification" Command="{Binding TestNotificationInfoCommand}" />
+                        <Button Content="Test Success Notification" Command="{Binding TestNotificationSuccessCommand}" />
+                        <Button Content="Test Warning Notification" Command="{Binding TestNotificationWarningCommand}" />
+                        <Button Content="Test Error Notification" Command="{Binding TestNotificationErrorCommand}" />
+                    </StackPanel>
+                </StackPanel>
+
+                <Separator />
+
+                <!-- Markdown Editor -->
+                <StackPanel Spacing="8">
+                    <TextBlock Text="MarkdownEditorControl" FontSize="16" FontWeight="SemiBold" />
+                    <TextBlock Text="Component showcase"
+                               FontSize="12" Opacity="0.7" />
+                    <Border BorderThickness="1"
+                            BorderBrush="{DynamicResource AppBorderBrush}"
+                            CornerRadius="8"
+                            Height="400">
+                        <controls:MarkdownEditorControl />
+                    </Border>
+                </StackPanel>
+
+            </StackPanel>
+        </ScrollViewer>
 
     </Grid>
 

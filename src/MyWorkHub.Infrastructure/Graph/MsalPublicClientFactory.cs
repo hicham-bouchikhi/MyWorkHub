@@ -2,6 +2,7 @@ using MyWorkHub.Core;
 using MyWorkHub.Core.Configuration;
 using Microsoft.Identity.Client;
 using Microsoft.Identity.Client.Extensions.Msal;
+using System.Runtime.InteropServices;
 
 namespace MyWorkHub.Infrastructure.Graph;
 
@@ -35,7 +36,7 @@ public static class MsalPublicClientFactory
 
     /// <summary>
     /// Persists the user token cache to <c>~/.MyWorkHub/msal_token_cache.bin</c>,
-    /// encrypted with Windows DPAPI (the cache helper's default on Windows).
+    /// encrypted with Windows DPAPI, macOS Keychain, or Linux libsecret.
     /// </summary>
     public static async Task RegisterTokenCacheAsync(IPublicClientApplication app)
     {
