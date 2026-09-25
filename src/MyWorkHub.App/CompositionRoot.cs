@@ -76,18 +76,27 @@ internal static class CompositionRoot
         db.Database.Migrate();
     }
 
-    /// <summary>Seeds the user config folder with the shipped defaults on first run.</summary>
+    /// <summary>
+    /// Seeds the user folder with the shipped defaults on first run: the configuration and the built-in
+    /// pull request review-agent template. Existing (possibly user-edited) copies are never overwritten.
+    /// </summary>
     private static void SeedUserConfig()
     {
-        if (File.Exists(AppPaths.UserAppSettingsPath))
+        SeedFile("appsettings.json", AppPaths.UserAppSettingsPath);
+        SeedFile("review-agent.md", AppPaths.ReviewAgentPath);
+    }
+
+    private static void SeedFile(string shippedFileName, string userPath)
+    {
+        if (File.Exists(userPath))
         {
             return;
         }
 
-        var shipped = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
+        var shipped = Path.Combine(AppContext.BaseDirectory, shippedFileName);
         if (File.Exists(shipped))
         {
-            File.Copy(shipped, AppPaths.UserAppSettingsPath);
+            File.Copy(shipped, userPath);
         }
     }
 

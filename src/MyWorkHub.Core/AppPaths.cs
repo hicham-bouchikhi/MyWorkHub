@@ -23,6 +23,12 @@ public static class AppPaths
     /// <summary>MSAL (Microsoft 365 sign-in) token cache, encrypted per-OS by the MSAL cache helper.</summary>
     public static string MsalTokenCachePath => Path.Combine(RootDir, "msal_token_cache.bin");
 
+    /// <summary>Built-in pull request review-agent template, seeded from the shipped copy on first run.</summary>
+    public static string ReviewAgentPath => Path.Combine(RootDir, "review-agent.md");
+
+    /// <summary>Default folder repositories are cloned into for pull request reviews (created on demand).</summary>
+    public static string ReviewRepositoriesDir => Path.Combine(RootDir, "repos");
+
     /// <summary>Creates the runtime folder tree on first launch. Idempotent.</summary>
     public static void EnsureCreated()
     {

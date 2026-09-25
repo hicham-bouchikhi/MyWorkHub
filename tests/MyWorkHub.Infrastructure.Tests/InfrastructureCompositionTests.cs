@@ -48,6 +48,19 @@ public sealed class InfrastructureCompositionTests
         Assert.NotNull(provider.GetRequiredService(serviceType));
     }
 
+    [Theory]
+    [InlineData(typeof(Core.Features.CliAgent.ICliAgentRunner))]
+    [InlineData(typeof(Core.Features.EmailSummary.IEmailSummaryService))]
+    [InlineData(typeof(Core.Features.PrReview.IPrReviewService))]
+    public void Should_resolve_the_ai_services_through_their_modules(Type serviceType)
+    {
+        var services = new ServiceCollection().AddInfrastructure(CreateConfiguration());
+        services.AddSingleton(typeof(Microsoft.Extensions.Logging.ILogger<>), typeof(Microsoft.Extensions.Logging.Abstractions.NullLogger<>));
+        using var provider = services.BuildServiceProvider();
+
+        Assert.NotNull(provider.GetRequiredService(serviceType));
+    }
+
     [Fact]
     public void Should_invoke_each_discovered_module_with_the_configuration()
     {

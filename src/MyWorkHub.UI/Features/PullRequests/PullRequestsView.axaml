@@ -7,7 +7,7 @@
              x:Name="Root"
              x:DataType="vm:PullRequestsViewModel">
 
-    <Grid RowDefinitions="Auto,Auto,*" Margin="24">
+    <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="24">
 
         <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,12">
             <TextBlock Grid.Column="0"
@@ -71,15 +71,59 @@
                                            Foreground="{DynamicResource AppAccentBrush}" />
                             </StackPanel>
                         </StackPanel>
-                        <Button Grid.Column="1"
-                                Content="Open"
-                                VerticalAlignment="Center"
-                                ToolTip.Tip="Open in Azure DevOps"
-                                Command="{Binding #Root.((vm:PullRequestsViewModel)DataContext).OpenCommand}"
-                                CommandParameter="{Binding}" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                            <Button Content="Review"
+                                    ToolTip.Tip="AI code review (Claude CLI)"
+                                    IsVisible="{Binding #Root.((vm:PullRequestsViewModel)DataContext).IsReviewAvailable}"
+                                    Command="{Binding #Root.((vm:PullRequestsViewModel)DataContext).ReviewCommand}"
+                                    CommandParameter="{Binding}" />
+                            <Button Content="Review with…"
+                                    ToolTip.Tip="AI code review with a review-agent file chosen for this review only"
+                                    IsVisible="{Binding #Root.((vm:PullRequestsViewModel)DataContext).CanPickReviewAgent}"
+                                    Command="{Binding #Root.((vm:PullRequestsViewModel)DataContext).ReviewWithAgentCommand}"
+                                    CommandParameter="{Binding}" />
+                            <Button Content="Open"
+                                    ToolTip.Tip="Open in Azure DevOps"
+                                    Command="{Binding #Root.((vm:PullRequestsViewModel)DataContext).OpenCommand}"
+                                    CommandParameter="{Binding}" />
+                        </StackPanel>
                     </Grid>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
+
+        <!-- Running / last AI review: streaming progress, then the Markdown report. -->
+        <Border Grid.Row="3"
+                Classes="card"
+                Padding="16"
+                Margin="0,12,0,0"
+                MaxHeight="320"
+                IsVisible="{Binding ReviewedItem, Converter={x:Static ObjectConverters.IsNotNull}}">
+            <Grid RowDefinitions="Auto,Auto,*">
+                <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                    <TextBlock Grid.Column="0"
+                               Text="{Binding ReviewedItem.IdText, FallbackValue=''}"
+                               FontWeight="SemiBold" />
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding ReviewedItem.Title, FallbackValue=''}"
+                               FontWeight="SemiBold"
+                               TextTrimming="CharacterEllipsis" />
+                    <Button Grid.Column="2"
+                            Content="Stop"
+                            Command="{Binding CancelReviewCommand}"
+                            IsVisible="{Binding IsReviewing}" />
+                </Grid>
+                <StackPanel Grid.Row="1" Spacing="4" Margin="0,6,0,6">
+                    <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsReviewing}" />
+                    <TextBlock Text="{Binding ReviewError}"
+                               Foreground="{DynamicResource AppDangerBrush}"
+                               TextWrapping="Wrap"
+                               IsVisible="{Binding ReviewError, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                </StackPanel>
+                <ScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Disabled">
+                    <SelectableTextBlock Text="{Binding ReviewOutput}" TextWrapping="Wrap" />
+                </ScrollViewer>
+            </Grid>
+        </Border>
     </Grid>
 </UserControl>

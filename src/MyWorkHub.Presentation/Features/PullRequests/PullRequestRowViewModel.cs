@@ -11,6 +11,7 @@ public sealed class PullRequestRowViewModel
     public PullRequestRowViewModel(PullRequestItem item)
     {
         ArgumentNullException.ThrowIfNull(item);
+        Item = item;
         Id = item.Id;
         Title = item.Title;
         Author = item.Author;
@@ -24,6 +25,9 @@ public sealed class PullRequestRowViewModel
         RoleText = IsAuthor ? "Authored" : "Reviewing";
         VoteText = IsAuthor ? "" : Describe(item.MyVote);
     }
+
+    /// <summary>The pull request this row shows (what a review is run on).</summary>
+    public PullRequestItem Item { get; }
 
     public int Id { get; }
 
