@@ -10,7 +10,6 @@ public sealed class AppDbContext : DbContext
     {
     }
 
-    public DbSet<TodoItem> Todos => Set<TodoItem>();
     public DbSet<AutomationRun> AutomationRuns => Set<AutomationRun>();
     public DbSet<AppCredential> Credentials => Set<AppCredential>();
     public DbSet<RemoteWorkSchedule> RemoteWorkSchedules => Set<RemoteWorkSchedule>();
@@ -20,6 +19,10 @@ public sealed class AppDbContext : DbContext
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);
         base.OnModelCreating(modelBuilder);
+
+        // Feature slices declare their own tables (e.g. Features/Todo/TodoItemEntityConfiguration),
+        // so adding a feature's entity never means editing this shared context.
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
 
         // AppCredential uses the string Key as its primary key (no generated Id).
         modelBuilder.Entity<AppCredential>().HasKey(c => c.Key);

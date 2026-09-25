@@ -24,11 +24,11 @@ public sealed class MainWindowViewModelTests
             .GetRequiredService<MainWindowViewModel>();
 
     [Fact]
-    public void Should_list_only_the_dashboard_when_no_feature_modules_are_installed()
+    public void Should_list_the_dashboard_first_then_the_installed_features_in_menu_order()
     {
         var vm = CreateDefaultShell();
 
-        Assert.Equal(["Dashboard"], vm.NavigationItems.Select(i => i.Label));
+        Assert.Equal(["Dashboard", "Todo"], vm.NavigationItems.Select(i => i.Label));
     }
 
     [Fact]
@@ -45,7 +45,8 @@ public sealed class MainWindowViewModelTests
     {
         var vm = CreateShellWithSampleModule();
 
-        Assert.Equal(["Dashboard", "Sample"], vm.NavigationItems.Select(i => i.Label));
+        // Sample's Order (10) sorts it ahead of Todo's (70).
+        Assert.Equal(["Dashboard", "Sample", "Todo"], vm.NavigationItems.Select(i => i.Label));
     }
 
     [Fact]

@@ -1,0 +1,100 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MyWorkHub.Presentation.Features.Todo"
+             xmlns:behaviors="using:MyWorkHub.UI.Behaviors"
+             x:Class="MyWorkHub.UI.Features.Todo.TodoView"
+             x:Name="Root"
+             x:DataType="vm:TodoViewModel">
+
+    <UserControl.Styles>
+        <Style Selector="TextBlock.done">
+            <Setter Property="TextDecorations" Value="Strikethrough" />
+            <Setter Property="Foreground" Value="{DynamicResource AppTextMutedBrush}" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*" Margin="24">
+
+        <TextBlock Grid.Row="0"
+                   Text="{Binding Title}"
+                   FontSize="24"
+                   FontWeight="SemiBold"
+                   Margin="0,0,0,16" />
+
+        <!-- Inline add: Enter or the button. -->
+        <Grid Grid.Row="1"
+              ColumnDefinitions="*,Auto"
+              ColumnSpacing="8"
+              Margin="0,0,0,12"
+              IsVisible="{Binding IsAvailable}">
+            <TextBox Grid.Column="0"
+                     PlaceholderText="Add a task…"
+                     Text="{Binding NewTitle}">
+                <TextBox.KeyBindings>
+                    <KeyBinding Gesture="Enter" Command="{Binding AddCommand}" />
+                </TextBox.KeyBindings>
+            </TextBox>
+            <Button Grid.Column="1"
+                    Content="Add"
+                    Command="{Binding AddCommand}"
+                    VerticalAlignment="Stretch" />
+        </Grid>
+
+        <TextBlock Grid.Row="2"
+                   Text="{Binding ErrorMessage}"
+                   IsVisible="{Binding ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                   Foreground="{DynamicResource AppDangerBrush}"
+                   TextWrapping="Wrap"
+                   Margin="0,0,0,8" />
+
+        <Panel Grid.Row="3">
+            <TextBlock Text="Todo storage is not available."
+                       Foreground="{DynamicResource AppTextMutedBrush}"
+                       IsVisible="{Binding !IsAvailable}" />
+
+            <TextBlock Text="Nothing here yet."
+                       Foreground="{DynamicResource AppTextMutedBrush}"
+                       VerticalAlignment="Top">
+                <TextBlock.IsVisible>
+                    <MultiBinding Converter="{x:Static BoolConverters.And}">
+                        <Binding Path="IsAvailable" />
+                        <Binding Path="!Items.Count" />
+                    </MultiBinding>
+                </TextBlock.IsVisible>
+            </TextBlock>
+
+            <!-- A real ListBox (selection + ScrollIntoView), not a bare ItemsControl, so deep links
+                 can land on a row. It scrolls itself: do not wrap it in a ScrollViewer. -->
+            <ListBox ItemsSource="{Binding Items}"
+                     SelectedItem="{Binding SelectedItem}"
+                     behaviors:ScrollIntoViewBehavior.Item="{Binding HighlightedItem}"
+                     IsVisible="{Binding Items.Count}"
+                     Background="Transparent"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:TodoRowViewModel">
+                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                            <CheckBox Grid.Column="0"
+                                      VerticalAlignment="Center"
+                                      IsChecked="{Binding IsCompleted, Mode=OneWay}"
+                                      Command="{Binding #Root.((vm:TodoViewModel)DataContext).ToggleCompletedCommand}"
+                                      CommandParameter="{Binding}" />
+                            <TextBlock Grid.Column="1"
+                                       VerticalAlignment="Center"
+                                       Text="{Binding Title}"
+                                       Classes.done="{Binding IsCompleted}"
+                                       TextTrimming="CharacterEllipsis" />
+                            <Button Grid.Column="2"
+                                    Classes="iconGhost"
+                                    Content="✕"
+                                    VerticalAlignment="Center"
+                                    ToolTip.Tip="Delete"
+                                    Command="{Binding #Root.((vm:TodoViewModel)DataContext).DeleteCommand}"
+                                    CommandParameter="{Binding}" />
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Panel>
+    </Grid>
+</UserControl>

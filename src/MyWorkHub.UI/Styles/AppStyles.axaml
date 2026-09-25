@@ -109,4 +109,18 @@
             </Transitions>
         </Setter>
     </Style>
+
+    <!-- ── Deep links: the row a navigation target revealed ───────────────
+         ScrollIntoViewBehavior sets this class on the item's container for a
+         moment; declared after FluentTheme so it also wins over :selected. -->
+    <Style Selector="ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.4" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="ListBoxItem.deepLinkHighlight /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource AppAccentBrush}" />
+    </Style>
 </Styles>
