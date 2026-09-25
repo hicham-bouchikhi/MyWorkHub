@@ -1,0 +1,262 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MyWorkHub.Presentation.Features.Settings"
+             x:Class="MyWorkHub.UI.Features.Settings.SettingsView"
+             x:Name="Root"
+             x:DataType="vm:SettingsViewModel">
+
+    <UserControl.Styles>
+        <Style Selector="TextBlock.sectionTitle">
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="TextBlock.label">
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="TextBlock.hint">
+            <Setter Property="Foreground" Value="{DynamicResource AppTextMutedBrush}" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <Style Selector="TextBlock.error">
+            <Setter Property="Foreground" Value="{DynamicResource AppDangerBrush}" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <Style Selector="TextBlock.status">
+            <Setter Property="Foreground" Value="{DynamicResource AppAccentBrush}" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*" Margin="24">
+
+        <TextBlock Grid.Row="0"
+                   Text="{Binding Title}"
+                   FontSize="24"
+                   FontWeight="SemiBold"
+                   Margin="0,0,0,8" />
+
+        <TabControl Grid.Row="1">
+
+            <!-- Appearance: applied and saved as soon as a choice changes. -->
+            <TabItem Header="Appearance">
+                <ScrollViewer>
+                    <StackPanel Spacing="12" MaxWidth="720" HorizontalAlignment="Left" Margin="0,12,0,0">
+                        <TextBlock Classes="hint"
+                                   Text="Settings are not available."
+                                   IsVisible="{Binding !Appearance.IsAvailable}" />
+                        <TextBlock Classes="hint"
+                                   Text="Changes apply immediately and are remembered for the next start." />
+
+                        <TextBlock Classes="label" Text="Theme" />
+                        <ComboBox ItemsSource="{x:Static vm:AppearanceSettingsViewModel.Themes}"
+                                  SelectedItem="{Binding Appearance.SelectedTheme}"
+                                  MinWidth="240" />
+                        <TextBlock Classes="hint" Text="System follows your operating system's light / dark setting." />
+
+                        <TextBlock Classes="label" Text="Colour palette" />
+                        <ComboBox ItemsSource="{x:Static vm:AppearanceSettingsViewModel.Palettes}"
+                                  SelectedItem="{Binding Appearance.SelectedPalette}"
+                                  MinWidth="240" />
+
+                        <TextBlock Classes="error"
+                                   Text="{Binding Appearance.ErrorMessage}"
+                                   IsVisible="{Binding Appearance.ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Workspace: Claude CLI + where PR reviews clone repositories. -->
+            <TabItem Header="Workspace">
+                <ScrollViewer>
+                    <StackPanel Spacing="8" MaxWidth="720" HorizontalAlignment="Left" Margin="0,12,0,0">
+                        <TextBlock Classes="hint"
+                                   Text="Settings are not available."
+                                   IsVisible="{Binding !Workspace.IsAvailable}" />
+                        <TextBlock Classes="hint"
+                                   Text="Used by the email digest and pull request reviews. Saved changes apply to the next run — no restart needed. Leave a field blank for the default shown in it." />
+
+                        <TextBlock Classes="label" Text="Work folder (where pull request reviews clone repositories)" Margin="0,8,0,0" />
+                        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                            <TextBox Grid.Column="0"
+                                     Text="{Binding Workspace.WorkFolderPath}"
+                                     PlaceholderText="{x:Static vm:WorkspaceSettingsViewModel.DefaultWorkFolderPath}" />
+                            <Button Grid.Column="1"
+                                    Content="Browse…"
+                                    Command="{Binding Workspace.BrowseWorkFolderCommand}"
+                                    IsVisible="{Binding Workspace.CanBrowseFolders}" />
+                            <Button Grid.Column="2"
+                                    Content="Reset"
+                                    ToolTip.Tip="Use the default folder"
+                                    Command="{Binding Workspace.ResetWorkFolderCommand}" />
+                        </Grid>
+                        <TextBlock Classes="hint"
+                                   Text="Repositories go to {folder}/{project}/{repository} and are reused across reviews. Existing clones are not moved when you change it." />
+
+                        <TextBlock Classes="label" Text="Claude CLI" Margin="0,8,0,0" />
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                            <TextBox Grid.Column="0"
+                                     Text="{Binding Workspace.ClaudeExecutablePath}"
+                                     PlaceholderText="claude (found on PATH)" />
+                            <Button Grid.Column="1"
+                                    Content="Browse…"
+                                    Command="{Binding Workspace.BrowseClaudeExecutableCommand}"
+                                    IsVisible="{Binding Workspace.CanBrowseFiles}" />
+                        </Grid>
+
+                        <TextBlock Classes="label" Text="Review model" Margin="0,8,0,0" />
+                        <TextBox Text="{Binding Workspace.ReviewModelId}"
+                                 PlaceholderText="The Claude CLI's default model" />
+
+                        <TextBlock Classes="label" Text="Review agent" Margin="0,8,0,0" />
+                        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                            <TextBox Grid.Column="0"
+                                     Text="{Binding Workspace.ReviewAgentPath}"
+                                     PlaceholderText="{x:Static vm:WorkspaceSettingsViewModel.DefaultReviewAgentPath}" />
+                            <Button Grid.Column="1"
+                                    Content="Browse…"
+                                    Command="{Binding Workspace.BrowseReviewAgentCommand}"
+                                    IsVisible="{Binding Workspace.CanBrowseFiles}" />
+                            <Button Grid.Column="2"
+                                    Content="Reset"
+                                    ToolTip.Tip="Use the built-in review agent"
+                                    Command="{Binding Workspace.ResetReviewAgentCommand}" />
+                        </Grid>
+                        <TextBlock Classes="hint"
+                                   Text="The Markdown instructions every review uses. A single review can still use another file via &quot;Review with…&quot; on the Pull requests page." />
+
+                        <Button Content="Save"
+                                Classes="accent"
+                                Command="{Binding Workspace.SaveCommand}"
+                                Margin="0,8,0,0" />
+                        <TextBlock Classes="status"
+                                   Text="{Binding Workspace.StatusMessage}"
+                                   IsVisible="{Binding Workspace.StatusMessage, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                        <TextBlock Classes="error"
+                                   Text="{Binding Workspace.ErrorMessage}"
+                                   IsVisible="{Binding Workspace.ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Azure DevOps: organization + projects + the shared personal access token. -->
+            <TabItem Header="Azure DevOps">
+                <ScrollViewer>
+                    <StackPanel Spacing="8" MaxWidth="720" HorizontalAlignment="Left" Margin="0,12,0,0">
+                        <TextBlock Classes="hint"
+                                   Text="Settings are not available."
+                                   IsVisible="{Binding !AzureDevOps.IsAvailable}" />
+                        <TextBlock Classes="hint"
+                                   Text="Used by the Pull requests and Work items pages. Saved changes apply to their next load — no restart needed (press Refresh on a page that is already open)." />
+
+                        <TextBlock Classes="label" Text="Organization URL" Margin="0,8,0,0" />
+                        <TextBox Text="{Binding AzureDevOps.OrganizationUrl}"
+                                 PlaceholderText="https://dev.azure.com/your-org/" />
+
+                        <TextBlock Classes="label" Text="Projects" Margin="0,8,0,0" />
+                        <TextBlock Classes="hint"
+                                   Text="Team projects whose active pull requests are listed. Work items are read organization-wide." />
+                        <ItemsControl ItemsSource="{Binding AzureDevOps.Projects}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="x:String">
+                                    <Grid ColumnDefinitions="*,Auto" Margin="0,2">
+                                        <TextBlock Grid.Column="0" Text="{Binding}" VerticalAlignment="Center" />
+                                        <Button Grid.Column="1"
+                                                Classes="iconGhost"
+                                                Content="✕"
+                                                ToolTip.Tip="Remove"
+                                                Command="{Binding #Root.((vm:SettingsViewModel)DataContext).AzureDevOps.RemoveProjectCommand}"
+                                                CommandParameter="{Binding}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Classes="hint"
+                                   Text="No projects yet — pull requests cannot be listed until you add one."
+                                   IsVisible="{Binding !AzureDevOps.Projects.Count}" />
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                            <TextBox Grid.Column="0"
+                                     PlaceholderText="Add a project…"
+                                     Text="{Binding AzureDevOps.NewProject}">
+                                <TextBox.KeyBindings>
+                                    <KeyBinding Gesture="Enter" Command="{Binding AzureDevOps.AddProjectCommand}" />
+                                </TextBox.KeyBindings>
+                            </TextBox>
+                            <Button Grid.Column="1"
+                                    Content="Add"
+                                    Command="{Binding AzureDevOps.AddProjectCommand}" />
+                        </Grid>
+
+                        <Button Content="Save"
+                                Classes="accent"
+                                Command="{Binding AzureDevOps.SaveCommand}"
+                                Margin="0,8,0,0" />
+
+                        <Border Classes="card" Padding="16" Margin="0,12,0,0" IsVisible="{Binding AzureDevOps.CanManageToken}">
+                            <StackPanel Spacing="8">
+                                <TextBlock Classes="sectionTitle" Text="Personal access token" />
+                                <TextBlock Classes="hint" Text="{Binding AzureDevOps.TokenStatus}" />
+                                <TextBlock Classes="hint"
+                                           Text="Shared with the connect prompt on the Pull requests and Work items pages. Verifying also saves the organization and projects above." />
+                                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                                    <TextBox Grid.Column="0"
+                                             PasswordChar="•"
+                                             PlaceholderText="Personal access token"
+                                             Text="{Binding AzureDevOps.PersonalAccessToken}">
+                                        <TextBox.KeyBindings>
+                                            <KeyBinding Gesture="Enter" Command="{Binding AzureDevOps.ConnectCommand}" />
+                                        </TextBox.KeyBindings>
+                                    </TextBox>
+                                    <Button Grid.Column="1"
+                                            Content="Verify &amp; save"
+                                            Command="{Binding AzureDevOps.ConnectCommand}" />
+                                    <Button Grid.Column="2"
+                                            Content="Forget"
+                                            ToolTip.Tip="Delete the stored token"
+                                            Command="{Binding AzureDevOps.DisconnectCommand}" />
+                                </Grid>
+                                <ProgressBar IsIndeterminate="True"
+                                             IsVisible="{Binding AzureDevOps.IsBusy}"
+                                             Height="2"
+                                             MinHeight="2" />
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Classes="status"
+                                   Text="{Binding AzureDevOps.StatusMessage}"
+                                   IsVisible="{Binding AzureDevOps.StatusMessage, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                        <TextBlock Classes="error"
+                                   Text="{Binding AzureDevOps.ErrorMessage}"
+                                   IsVisible="{Binding AzureDevOps.ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="About">
+                <ScrollViewer>
+                    <StackPanel Spacing="8" MaxWidth="720" HorizontalAlignment="Left" Margin="0,12,0,0">
+                        <TextBlock Text="{x:Static vm:AboutViewModel.AppName}" FontSize="20" FontWeight="SemiBold" />
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="Version" Classes="label" />
+                            <TextBlock Text="{Binding About.Version}" />
+                            <TextBlock Classes="hint"
+                                       Text="{Binding About.Commit, StringFormat='(commit {0})'}"
+                                       IsVisible="{Binding About.Commit, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                        </StackPanel>
+                        <TextBlock Classes="hint"
+                                   Text="Your Outlook mail and calendar, Teams chats, Azure DevOps pull requests and work items, todos and scheduled automations in one place." />
+
+                        <TextBlock Classes="label" Text="Settings file" Margin="0,8,0,0" />
+                        <SelectableTextBlock Text="{x:Static vm:AboutViewModel.ConfigurationFilePath}" />
+                        <TextBlock Classes="label" Text="Data folder" />
+                        <SelectableTextBlock Text="{x:Static vm:AboutViewModel.DataFolderPath}" />
+
+                        <Button Content="View the repository on GitHub"
+                                Command="{Binding About.OpenRepositoryCommand}"
+                                ToolTip.Tip="{x:Static vm:AboutViewModel.RepositoryUrl}"
+                                Margin="0,8,0,0" />
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</UserControl>

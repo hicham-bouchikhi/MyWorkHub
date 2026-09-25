@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json.Serialization.Metadata;
 using MyWorkHub.Core.Abstractions;
 using MyWorkHub.Core.Features.AzureDevOps;
+using MyWorkHub.Infrastructure.Configuration;
 
 namespace MyWorkHub.Infrastructure.Features.AzureDevOps;
 
@@ -31,10 +32,10 @@ internal sealed class AzureDevOpsClient
     private const int ERROR_SNIPPET_LENGTH = 400;
 
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly AzureDevOpsOptions _options;
+    private readonly LiveOptions<AzureDevOpsOptions> _options;
     private readonly ICredentialStore _credentials;
 
-    public AzureDevOpsClient(IHttpClientFactory httpClientFactory, AzureDevOpsOptions options, ICredentialStore credentials)
+    public AzureDevOpsClient(IHttpClientFactory httpClientFactory, LiveOptions<AzureDevOpsOptions> options, ICredentialStore credentials)
     {
         ArgumentNullException.ThrowIfNull(httpClientFactory);
         ArgumentNullException.ThrowIfNull(options);
@@ -44,12 +45,12 @@ internal sealed class AzureDevOpsClient
         _credentials = credentials;
     }
 
-    /// <summary>The configured organization root (ends in <c>/</c>).</summary>
+    /// <summary>The currently configured organization root (ends in <c>/</c>), re-read on every access.</summary>
     /// <exception cref="AzureDevOpsNotConnectedException">No valid organization URL is configured.</exception>
-    public Uri OrganizationUrl => _options.OrganizationUrl
+    public Uri OrganizationUrl => _options.Current.OrganizationUrl
         ?? throw new AzureDevOpsNotConnectedException(
-            $"The Azure DevOps organization URL is not configured. Set {AzureDevOpsOptions.SECTION}:OrganizationUrl " +
-            "in ~/.MyWorkHub/appsettings.json (e.g. https://dev.azure.com/your-org/).");
+            "The Azure DevOps organization URL is not configured. Set it in Settings → Azure DevOps " +
+            $"({AzureDevOpsOptions.SECTION}:OrganizationUrl, e.g. https://dev.azure.com/your-org/).");
 
     /// <summary>The user the stored token authenticates as.</summary>
     public Task<AzureDevOpsUser> GetCurrentUserAsync(CancellationToken ct = default)

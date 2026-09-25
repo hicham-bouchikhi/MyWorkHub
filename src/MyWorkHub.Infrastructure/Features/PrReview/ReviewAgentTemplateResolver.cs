@@ -25,13 +25,15 @@ internal sealed class ReviewAgentTemplateResolver
         "## Suggestions\nBullet list of concrete improvements.\n\n" +
         "## Verdict\nApproved / Needs Changes / Rejected — one sentence.\n";
 
-    private readonly string? _configuredPath;
+    private readonly Func<string?> _configuredPath;
     private readonly string _seededDefaultPath;
 
-    /// <param name="configuredPath">The user's global template (<c>Workspace:ReviewAgentPath</c>), or null.</param>
+    /// <param name="configuredPath">Reads the user's global template (<c>Workspace:ReviewAgentPath</c>, or null)
+    /// on every resolution, so a template changed in Settings applies to the next review.</param>
     /// <param name="seededDefaultPath">Where the built-in template is seeded (<c>AppPaths.ReviewAgentPath</c>).</param>
-    public ReviewAgentTemplateResolver(string? configuredPath, string seededDefaultPath)
+    public ReviewAgentTemplateResolver(Func<string?> configuredPath, string seededDefaultPath)
     {
+        ArgumentNullException.ThrowIfNull(configuredPath);
         ArgumentException.ThrowIfNullOrWhiteSpace(seededDefaultPath);
         _configuredPath = configuredPath;
         _seededDefaultPath = seededDefaultPath;
@@ -45,7 +47,7 @@ internal sealed class ReviewAgentTemplateResolver
             return fromOverride;
         }
 
-        if (TryUserTemplate(_configuredPath, "configured", progress) is { } fromConfiguration)
+        if (TryUserTemplate(_configuredPath(), "configured", progress) is { } fromConfiguration)
         {
             return fromConfiguration;
         }

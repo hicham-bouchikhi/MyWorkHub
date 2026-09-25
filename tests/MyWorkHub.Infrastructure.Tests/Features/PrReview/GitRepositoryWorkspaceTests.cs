@@ -31,8 +31,8 @@ public sealed class GitRepositoryWorkspaceTests : IDisposable
 
     private GitRepositoryWorkspace Workspace(string? organization = "https://dev.azure.com/cegid/")
         => new(_processes,
-            new WorkspaceOptions("claude", _workFolder.FullName, ReviewModelId: null, ReviewAgentPath: null),
-            new AzureDevOpsOptions(organization is null ? null : new Uri(organization), []),
+            Live.Of(new WorkspaceOptions("claude", _workFolder.FullName, ReviewModelId: null, ReviewAgentPath: null)),
+            Live.Of(new AzureDevOpsOptions(organization is null ? null : new Uri(organization), [])),
             _credentials);
 
     private string RepositoryDirectory => Path.Combine(_workFolder.FullName, "My Project", "web");

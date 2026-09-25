@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using MyWorkHub.Core.Features.AzureDevOps;
+using MyWorkHub.Infrastructure.Configuration;
 
 namespace MyWorkHub.Infrastructure.Features.AzureDevOps;
 
@@ -42,10 +43,10 @@ internal sealed partial class AzureDevOpsService : IAzureDevOpsService
     private static readonly PullRequestRole[] _roleQueryOrder = [PullRequestRole.AUTHOR, PullRequestRole.REVIEWER];
 
     private readonly AzureDevOpsClient _client;
-    private readonly AzureDevOpsOptions _options;
+    private readonly LiveOptions<AzureDevOpsOptions> _options;
     private readonly ILogger<AzureDevOpsService> _logger;
 
-    public AzureDevOpsService(AzureDevOpsClient client, AzureDevOpsOptions options, ILogger<AzureDevOpsService> logger)
+    public AzureDevOpsService(AzureDevOpsClient client, LiveOptions<AzureDevOpsOptions> options, ILogger<AzureDevOpsService> logger)
     {
         ArgumentNullException.ThrowIfNull(client);
         ArgumentNullException.ThrowIfNull(options);
@@ -62,15 +63,16 @@ internal sealed partial class AzureDevOpsService : IAzureDevOpsService
         // First, so a missing token is reported (and a sign-in offered) before any configuration gap.
         var me = await _client.GetCurrentUserAsync(ct).ConfigureAwait(false);
 
-        if (_options.Projects.Count == 0)
+        var projects = _options.Current.Projects;
+        if (projects.Count == 0)
         {
             throw new InvalidOperationException(
-                $"No Azure DevOps projects are configured. List them under {AzureDevOpsOptions.SECTION}:Projects " +
-                "in ~/.MyWorkHub/appsettings.json.");
+                "No Azure DevOps projects are configured. Add the projects whose pull requests you want to see " +
+                $"in Settings → Azure DevOps ({AzureDevOpsOptions.SECTION}:Projects).");
         }
 
         var byId = new Dictionary<int, PullRequestItem>();
-        foreach (var project in _options.Projects)
+        foreach (var project in projects)
         {
             foreach (var role in _roleQueryOrder)
             {

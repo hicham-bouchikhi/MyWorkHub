@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text;
 using MyWorkHub.Core.Abstractions;
 using MyWorkHub.Core.Features.AzureDevOps;
+using MyWorkHub.Infrastructure.Configuration;
 using MyWorkHub.Infrastructure.Features.AzureDevOps;
 using MyWorkHub.Infrastructure.Features.Workspace;
 using MyWorkHub.Infrastructure.Processes;
@@ -32,12 +33,15 @@ internal sealed class GitRepositoryWorkspace : IRepositoryWorkspace
     private const int ERROR_SNIPPET_LENGTH = 400;
 
     private readonly IProcessRunner _processes;
-    private readonly WorkspaceOptions _workspace;
-    private readonly AzureDevOpsOptions _azureDevOps;
+    private readonly LiveOptions<WorkspaceOptions> _workspace;
+    private readonly LiveOptions<AzureDevOpsOptions> _azureDevOps;
     private readonly ICredentialStore _credentials;
 
     public GitRepositoryWorkspace(
-        IProcessRunner processes, WorkspaceOptions workspace, AzureDevOpsOptions azureDevOps, ICredentialStore credentials)
+        IProcessRunner processes,
+        LiveOptions<WorkspaceOptions> workspace,
+        LiveOptions<AzureDevOpsOptions> azureDevOps,
+        ICredentialStore credentials)
     {
         ArgumentNullException.ThrowIfNull(processes);
         ArgumentNullException.ThrowIfNull(workspace);
@@ -54,9 +58,9 @@ internal sealed class GitRepositoryWorkspace : IRepositoryWorkspace
         ArgumentNullException.ThrowIfNull(pr);
         ArgumentException.ThrowIfNullOrWhiteSpace(pr.SourceBranch);
 
-        var organization = _azureDevOps.OrganizationUrl
+        var organization = _azureDevOps.Current.OrganizationUrl
             ?? throw new AzureDevOpsNotConnectedException(
-                $"The Azure DevOps organization URL is not configured ({AzureDevOpsOptions.SECTION}:OrganizationUrl).");
+                $"The Azure DevOps organization URL is not configured (Settings → Azure DevOps, {AzureDevOpsOptions.SECTION}:OrganizationUrl).");
         var token = _credentials.Get(CredentialKeys.AZURE_DEVOPS_PAT);
         if (string.IsNullOrWhiteSpace(token))
         {
@@ -64,7 +68,8 @@ internal sealed class GitRepositoryWorkspace : IRepositoryWorkspace
         }
 
         var environment = AuthenticationEnvironment(token);
-        var projectDirectory = Path.Combine(_workspace.WorkFolderPath, SafeDirectoryName(pr.Project));
+        // Read per review, so a work folder changed in Settings applies to the next review (existing clones stay put).
+        var projectDirectory = Path.Combine(_workspace.Current.WorkFolderPath, SafeDirectoryName(pr.Project));
         var repositoryDirectory = Path.Combine(projectDirectory, SafeDirectoryName(pr.Repository));
 
         if (Directory.Exists(Path.Combine(repositoryDirectory, ".git")))

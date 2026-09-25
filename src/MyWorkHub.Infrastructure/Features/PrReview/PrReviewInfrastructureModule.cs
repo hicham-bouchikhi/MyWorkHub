@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using MyWorkHub.Core;
 using MyWorkHub.Core.Features.PrReview;
 using MyWorkHub.Core.Modules;
+using MyWorkHub.Infrastructure.Configuration;
 using MyWorkHub.Infrastructure.Features.Workspace;
 using MyWorkHub.Infrastructure.Processes;
 
@@ -21,13 +22,17 @@ public sealed class PrReviewInfrastructureModule : IInfrastructureModule
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
 
-        // Shared with the CliAgent module; TryAdd so either may declare the need.
-        services.TryAddSingleton(WorkspaceOptions.FromConfiguration(configuration));
+        // Shared with the CliAgent module; TryAdd so either may declare the need. Re-read per use so edits made
+        // on the Settings page (work folder, model, review agent) apply to the next review without a restart.
+        services.TryAddSingleton(new LiveOptions<WorkspaceOptions>(() => WorkspaceOptions.FromConfiguration(configuration)));
         services.TryAddSingleton<IProcessRunner, ProcessRunner>();
 
         services.AddSingleton<IRepositoryWorkspace, GitRepositoryWorkspace>();
-        services.AddSingleton(sp => new ReviewAgentTemplateResolver(
-            sp.GetRequiredService<WorkspaceOptions>().ReviewAgentPath, AppPaths.ReviewAgentPath));
+        services.AddSingleton(sp =>
+        {
+            var workspace = sp.GetRequiredService<LiveOptions<WorkspaceOptions>>();
+            return new ReviewAgentTemplateResolver(() => workspace.Current.ReviewAgentPath, AppPaths.ReviewAgentPath);
+        });
         services.AddSingleton<IPrReviewService, ClaudePrReviewService>();
     }
 }

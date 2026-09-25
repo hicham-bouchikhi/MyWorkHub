@@ -2,10 +2,9 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using Avalonia.Styling;
+using MyWorkHub.Core.Abstractions;
 using MyWorkHub.Core.Configuration;
 using MyWorkHub.UI;
-using MyWorkHub.UI.Theming;
 using MyWorkHub.UI.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -62,15 +61,11 @@ public partial class App : Application
             var uiOptions = _services.GetRequiredService<IOptions<UiOptions>>().Value;
             _minimizeToTrayOnClose = uiOptions.MinimizeToTrayOnClose;
 
-            RequestedThemeVariant = uiOptions.Theme switch
-            {
-                "Light" => ThemeVariant.Light,
-                "Dark"  => ThemeVariant.Dark,
-                _       => ThemeVariant.Default
-            };
-
-            // Merge the configured colour palette before building the UI so its App* tokens resolve.
-            PaletteManager.Apply(uiOptions.Palette);
+            // The same runtime seam the Settings page uses. The palette is merged before the UI is built so its
+            // App* tokens resolve.
+            var theme = _services.GetRequiredService<IThemeService>();
+            theme.ApplyTheme(uiOptions.Theme);
+            theme.ApplyPalette(uiOptions.Palette);
 
             // Page views are resolved through the module-built registry, not a naming convention.
             DataTemplates.Add(_services.GetRequiredService<ViewLocator>());

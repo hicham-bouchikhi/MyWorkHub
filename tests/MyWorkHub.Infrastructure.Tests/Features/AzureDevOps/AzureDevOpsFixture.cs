@@ -39,7 +39,7 @@ internal sealed class AzureDevOpsFixture : IDisposable
             Credentials.Save(CredentialKeys.AZURE_DEVOPS_PAT, storedToken);
         }
 
-        var options = new AzureDevOpsOptions(organizationUrl is null ? null : new Uri(organizationUrl), projects ?? ["Alpha"]);
+        var options = Live.Of(new AzureDevOpsOptions(organizationUrl is null ? null : new Uri(organizationUrl), projects ?? ["Alpha"]));
         Factory = new StubHttpClientFactory(Handler);
         Client = new AzureDevOpsClient(Factory, options, Credentials);
         Service = new AzureDevOpsService(Client, options, NullLogger<AzureDevOpsService>.Instance);

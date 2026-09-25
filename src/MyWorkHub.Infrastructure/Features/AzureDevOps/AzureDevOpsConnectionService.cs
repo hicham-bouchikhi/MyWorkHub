@@ -23,6 +23,8 @@ internal sealed class AzureDevOpsConnectionService : IAzureDevOpsConnectionServi
         _credentials = credentials;
     }
 
+    public bool HasStoredToken => !string.IsNullOrWhiteSpace(_credentials.Get(CredentialKeys.AZURE_DEVOPS_PAT));
+
     public async Task<AzureDevOpsConnectResult> ConnectAsync(string personalAccessToken, CancellationToken ct = default)
     {
         var token = personalAccessToken?.Trim() ?? "";

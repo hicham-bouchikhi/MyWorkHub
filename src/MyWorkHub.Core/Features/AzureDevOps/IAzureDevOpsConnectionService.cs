@@ -6,6 +6,9 @@ namespace MyWorkHub.Core.Features.AzureDevOps;
 /// </summary>
 public interface IAzureDevOpsConnectionService
 {
+    /// <summary>Whether a token is currently stored (it may still have expired or been revoked since).</summary>
+    bool HasStoredToken { get; }
+
     /// <summary>
     /// Checks <paramref name="personalAccessToken"/> against the configured organization and, only if
     /// Azure DevOps accepts it, stores it for every Azure DevOps-backed service. Failures (rejected token,

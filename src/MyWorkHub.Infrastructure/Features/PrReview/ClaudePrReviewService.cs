@@ -2,6 +2,7 @@ using System.Globalization;
 using MyWorkHub.Core.Features.AzureDevOps;
 using MyWorkHub.Core.Features.CliAgent;
 using MyWorkHub.Core.Features.PrReview;
+using MyWorkHub.Infrastructure.Configuration;
 using MyWorkHub.Infrastructure.Features.Workspace;
 
 namespace MyWorkHub.Infrastructure.Features.PrReview;
@@ -29,10 +30,10 @@ internal sealed class ClaudePrReviewService : IPrReviewService
     private readonly IRepositoryWorkspace _workspace;
     private readonly ReviewAgentTemplateResolver _templates;
     private readonly ICliAgentRunner _runner;
-    private readonly WorkspaceOptions _options;
+    private readonly LiveOptions<WorkspaceOptions> _options;
 
     public ClaudePrReviewService(
-        IRepositoryWorkspace workspace, ReviewAgentTemplateResolver templates, ICliAgentRunner runner, WorkspaceOptions options)
+        IRepositoryWorkspace workspace, ReviewAgentTemplateResolver templates, ICliAgentRunner runner, LiveOptions<WorkspaceOptions> options)
     {
         ArgumentNullException.ThrowIfNull(workspace);
         ArgumentNullException.ThrowIfNull(templates);
@@ -52,7 +53,8 @@ internal sealed class ClaudePrReviewService : IPrReviewService
         var repositoryDirectory = await _workspace.PrepareAsync(pr, progress, ct).ConfigureAwait(false);
         var template = _templates.Resolve(agentFilePath, progress);
 
-        progress?.Report(_options.ReviewModelId is { } model
+        var modelId = _options.Current.ReviewModelId;
+        progress?.Report(modelId is { } model
             ? $"Running the Claude review with model '{model}' — this can take a while…"
             : "Running the Claude review — this can take a while…");
 
@@ -60,7 +62,7 @@ internal sealed class ClaudePrReviewService : IPrReviewService
             template,
             BuildUserMessage(pr),
             WorkingDirectory: repositoryDirectory,
-            ModelId: _options.ReviewModelId,
+            ModelId: modelId,
             DisallowedTools: DisallowedTools,
             StrictMcpConfig: true,
             AllowedTools: AllowedTools);

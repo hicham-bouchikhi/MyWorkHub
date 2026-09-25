@@ -15,7 +15,7 @@ public sealed class ClaudeCliAgentRunnerTests
     private readonly FakeProcessRunner _processes = new();
 
     private ClaudeCliAgentRunner Runner(string claude = "claude")
-        => new(_processes, new WorkspaceOptions(claude, "/work", ReviewModelId: null, ReviewAgentPath: null));
+        => new(_processes, Live.Of(new WorkspaceOptions(claude, "/work", ReviewModelId: null, ReviewAgentPath: null)));
 
     // --- Argument building ------------------------------------------------------------------
 

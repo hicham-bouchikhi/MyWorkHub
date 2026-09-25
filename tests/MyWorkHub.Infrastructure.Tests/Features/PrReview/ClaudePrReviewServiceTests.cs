@@ -28,9 +28,9 @@ public sealed class ClaudePrReviewServiceTests : IDisposable
 
     private ClaudePrReviewService Service(string? model = "claude-sonnet-5", string? configuredAgent = null)
         => new(_workspace,
-            new ReviewAgentTemplateResolver(configuredAgent, Template("seeded.md", "SEEDED TEMPLATE")),
+            new ReviewAgentTemplateResolver(() => configuredAgent, Template("seeded.md", "SEEDED TEMPLATE")),
             _runner,
-            new WorkspaceOptions("claude", "/work", model, configuredAgent));
+            Live.Of(new WorkspaceOptions("claude", "/work", model, configuredAgent)));
 
     [Fact]
     public async Task Should_review_inside_the_checked_out_repository_with_read_only_tools()

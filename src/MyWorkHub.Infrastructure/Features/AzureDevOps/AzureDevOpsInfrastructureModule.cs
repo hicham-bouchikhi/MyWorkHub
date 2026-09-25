@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MyWorkHub.Core.Features.AzureDevOps;
 using MyWorkHub.Core.Modules;
+using MyWorkHub.Infrastructure.Configuration;
 
 namespace MyWorkHub.Infrastructure.Features.AzureDevOps;
 
@@ -21,7 +22,9 @@ public sealed class AzureDevOpsInfrastructureModule : IInfrastructureModule
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
 
-        services.AddSingleton(AzureDevOpsOptions.FromConfiguration(configuration));
+        // Re-read per request, so an organization URL / project list saved on the Settings page applies to the
+        // next load without a restart.
+        services.AddSingleton(new LiveOptions<AzureDevOpsOptions>(() => AzureDevOpsOptions.FromConfiguration(configuration)));
 
         // Named client from IHttpClientFactory (pooled, rotated handlers). AzureDevOpsClient asks the
         // factory per request, so it — and the services over it — can safely be singletons.

@@ -10,6 +10,7 @@ using MyWorkHub.UI.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
 using Serilog;
 
@@ -103,11 +104,29 @@ internal static class CompositionRoot
         }
     }
 
+    /// <summary>
+    /// Loads <c>~/.MyWorkHub/appsettings.json</c> with reload on change, so services that re-read their section
+    /// per use (Azure DevOps, Workspace) see edits — from the Settings page, which also reloads explicitly after
+    /// saving, or by hand — without a restart. The file is <em>polled</em> (every few seconds, that one file
+    /// only) rather than watched with a <see cref="FileSystemWatcher"/>: a watcher on the data folder is
+    /// recursive, and on Linux that means one inotify watch per directory of every PR-review clone under
+    /// <c>repos/</c>, which can exhaust the per-user watch limit.
+    /// </summary>
+    [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope",
+        Justification = "The file provider backs the process-wide configuration and must live until the process exits; " +
+                        "the configuration does not own it and the container cannot (it is needed before the container exists).")]
     private static IConfiguration BuildConfiguration()
-        => new ConfigurationBuilder()
-            .SetBasePath(AppPaths.RootDir)
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
+    {
+        var fileProvider = new PhysicalFileProvider(AppPaths.RootDir)
+        {
+            UsePollingFileWatcher = true,
+            UseActivePolling = true,
+        };
+
+        return new ConfigurationBuilder()
+            .AddJsonFile(fileProvider, "appsettings.json", optional: false, reloadOnChange: true)
             .Build();
+    }
 
     private static void ConfigureSerilog()
         => Log.Logger = new LoggerConfiguration()

@@ -85,4 +85,17 @@ public sealed class AzureDevOpsConnectionServiceTests
 
         Assert.Null(fixture.Credentials.Get(CredentialKeys.AZURE_DEVOPS_PAT));
     }
+
+    [Fact]
+    public async Task Should_report_whether_a_token_is_stored_as_it_is_connected_and_forgotten()
+    {
+        using var fixture = new AzureDevOpsFixture(storedToken: null);
+        Assert.False(fixture.Connection.HasStoredToken);
+
+        await fixture.Connection.ConnectAsync("fresh-pat", Ct);
+        Assert.True(fixture.Connection.HasStoredToken);
+
+        fixture.Connection.Disconnect();
+        Assert.False(fixture.Connection.HasStoredToken);
+    }
 }

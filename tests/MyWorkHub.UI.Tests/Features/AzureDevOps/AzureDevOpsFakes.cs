@@ -10,6 +10,8 @@ internal sealed class FakeAzureDevOpsConnection : IAzureDevOpsConnectionService
 
     public bool HasToken { get; set; } = true;
 
+    public bool HasStoredToken => HasToken;
+
     public List<string> ConnectAttempts { get; } = [];
 
     public Task<AzureDevOpsConnectResult> ConnectAsync(string personalAccessToken, CancellationToken ct = default)

@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Globalization;
 using MyWorkHub.Core.Features.CliAgent;
+using MyWorkHub.Infrastructure.Configuration;
 using MyWorkHub.Infrastructure.Features.Workspace;
 using MyWorkHub.Infrastructure.Processes;
 
@@ -21,9 +22,9 @@ internal sealed class ClaudeCliAgentRunner : ICliAgentRunner
     private const int ERROR_SNIPPET_LENGTH = 600;
 
     private readonly IProcessRunner _processes;
-    private readonly WorkspaceOptions _options;
+    private readonly LiveOptions<WorkspaceOptions> _options;
 
-    public ClaudeCliAgentRunner(IProcessRunner processes, WorkspaceOptions options)
+    public ClaudeCliAgentRunner(IProcessRunner processes, LiveOptions<WorkspaceOptions> options)
     {
         ArgumentNullException.ThrowIfNull(processes);
         ArgumentNullException.ThrowIfNull(options);
@@ -38,13 +39,14 @@ internal sealed class ClaudeCliAgentRunner : ICliAgentRunner
         ArgumentException.ThrowIfNullOrWhiteSpace(request.UserMessage);
 
         // Isolation: nothing but the prompt may reach the model — no CLAUDE.md, no repository files.
+        var claudeExecutable = _options.Current.ClaudeExecutablePath;
         var isolatedDirectory = request.WorkingDirectory is null
             ? Directory.CreateTempSubdirectory(TEMP_DIRECTORY_PREFIX)
             : null;
         try
         {
             var processRequest = new ProcessRequest(
-                _options.ClaudeExecutablePath,
+                claudeExecutable,
                 BuildArguments(request),
                 request.WorkingDirectory ?? isolatedDirectory!.FullName,
                 StandardInput: request.UserMessage);
@@ -57,8 +59,8 @@ internal sealed class ClaudeCliAgentRunner : ICliAgentRunner
             catch (Win32Exception ex)
             {
                 throw new CliAgentException(
-                    $"Could not start the Claude CLI ('{_options.ClaudeExecutablePath}'). Install Claude Code and sign in, " +
-                    $"or set {WorkspaceOptions.SECTION}:ClaudeExecutablePath in ~/.MyWorkHub/appsettings.json.", ex);
+                    $"Could not start the Claude CLI ('{claudeExecutable}'). Install Claude Code and sign in, " +
+                    $"or set its path in Settings → Workspace ({WorkspaceOptions.SECTION}:ClaudeExecutablePath).", ex);
             }
 
             if (result.ExitCode != 0)
