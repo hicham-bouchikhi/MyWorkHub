@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using MyWorkHub.Automation.Scheduling;
 using MyWorkHub.Core;
 using MyWorkHub.Core.Configuration;
 using MyWorkHub.Infrastructure.Data;
@@ -10,7 +11,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Quartz;
 using Serilog;
 
 namespace MyWorkHub.App;
@@ -47,9 +47,9 @@ internal static class CompositionRoot
         // UI shell: navigation, toast notifications, feature pages + views and the main window.
         services.AddUi();
 
-        // Quartz scheduler: registers ISchedulerFactory (singleton) with a Microsoft DI
-        // job factory so jobs resolve from the container. Jobs are scheduled in later phases.
-        services.AddQuartz();
+        // Quartz scheduler + the discovered automation jobs and their configured schedules. Jobs resolve
+        // their Core dependencies from this container; the scheduler is started by App once the UI is up.
+        services.AddAutomations(configuration);
 
         var provider = services.BuildServiceProvider();
         try

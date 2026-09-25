@@ -78,11 +78,17 @@ internal sealed class FakeGraphRequestAdapter : IRequestAdapter, IDisposable
         CancellationToken cancellationToken = default)
         => throw new NotSupportedException();
 
+    // Actions with no response body (e.g. POST /me/sendMail): recorded, and the responder may throw to
+    // simulate a Graph error; whatever it returns is ignored.
     public Task SendNoContentAsync(
         RequestInformation requestInfo,
         Dictionary<string, ParsableFactory<IParsable>>? errorMapping = null,
         CancellationToken cancellationToken = default)
-        => throw new NotSupportedException();
+    {
+        Requests.Add(requestInfo);
+        _respond(requestInfo);
+        return Task.CompletedTask;
+    }
 
     public Task<T?> ConvertToNativeRequestAsync<T>(RequestInformation requestInfo, CancellationToken cancellationToken = default)
         => throw new NotSupportedException();

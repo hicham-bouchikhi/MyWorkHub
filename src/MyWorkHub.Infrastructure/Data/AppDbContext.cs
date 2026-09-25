@@ -10,9 +10,7 @@ public sealed class AppDbContext : DbContext
     {
     }
 
-    public DbSet<AutomationRun> AutomationRuns => Set<AutomationRun>();
     public DbSet<AppCredential> Credentials => Set<AppCredential>();
-    public DbSet<RemoteWorkSchedule> RemoteWorkSchedules => Set<RemoteWorkSchedule>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -25,10 +23,5 @@ public sealed class AppDbContext : DbContext
 
         // AppCredential uses the string Key as its primary key (no generated Id).
         modelBuilder.Entity<AppCredential>().HasKey(c => c.Key);
-
-        // Persist the run status as a readable string rather than an int.
-        modelBuilder.Entity<AutomationRun>()
-            .Property(r => r.Status)
-            .HasConversion<string>();
     }
 }

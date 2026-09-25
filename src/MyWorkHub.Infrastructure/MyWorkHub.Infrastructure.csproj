@@ -32,6 +32,9 @@
          with libsecret/Keychain-friendly key storage on Linux/macOS. Replaces the
          Windows-only System.Security.Cryptography.ProtectedData. -->
     <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="10.0.10" />
+    <!-- Browser automations (transport attestation download, remote-work declarations). Chromium only;
+         the browser build is installed on first use (see PlaywrightBrowserService). -->
+    <PackageReference Include="Microsoft.Playwright" Version="1.63.0" />
     <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.10" />
   </ItemGroup>
 

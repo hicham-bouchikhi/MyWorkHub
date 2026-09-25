@@ -8,6 +8,7 @@
     <Project Path="src/MyWorkHub.UI/MyWorkHub.UI.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/MyWorkHub.Automation.Tests/MyWorkHub.Automation.Tests.csproj" />
     <Project Path="tests/MyWorkHub.Core.Tests/MyWorkHub.Core.Tests.csproj" />
     <Project Path="tests/MyWorkHub.Infrastructure.Tests/MyWorkHub.Infrastructure.Tests.csproj" />
     <Project Path="tests/MyWorkHub.UI.Tests/MyWorkHub.UI.Tests.csproj" />

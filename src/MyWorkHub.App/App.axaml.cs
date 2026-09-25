@@ -89,7 +89,7 @@ public partial class App : Application
                 }
             };
 
-            // Quartz starts in the background; no jobs are scheduled yet (Phase 10/11).
+            // Quartz starts in the background and runs the scheduled automations (see AddAutomations).
             _ = StartSchedulerAsync();
         }
 

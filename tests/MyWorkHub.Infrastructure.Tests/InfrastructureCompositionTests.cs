@@ -61,6 +61,19 @@ public sealed class InfrastructureCompositionTests
         Assert.NotNull(provider.GetRequiredService(serviceType));
     }
 
+    [Theory]
+    [InlineData(typeof(Core.Features.Automations.IAutomationLogger))]
+    [InlineData(typeof(Core.Features.Automations.IAutomationCredentialService))]
+    [InlineData(typeof(Core.Features.Automations.IRemoteWorkPlanRepository))]
+    [InlineData(typeof(Core.Features.Automations.IRemoteWorkSyncAutomation))]
+    [InlineData(typeof(Core.Features.Automations.ITransportReimbursementAutomation))]
+    public void Should_resolve_the_automation_services_through_their_module(Type serviceType)
+    {
+        using var provider = new ServiceCollection().AddInfrastructure(CreateConfiguration()).BuildServiceProvider();
+
+        Assert.NotNull(provider.GetRequiredService(serviceType));
+    }
+
     [Fact]
     public void Should_invoke_each_discovered_module_with_the_configuration()
     {

@@ -131,6 +131,6 @@ public sealed class AzureDevOpsDeepLinkTests
 
         var labels = provider.GetRequiredService<IReadOnlyList<NavigationItem>>().Select(i => i.Label).ToList();
 
-        Assert.Equal(["Teams", "Pull requests", "Work items", "Todo"], labels.SkipWhile(l => l != "Teams"));
+        Assert.Equal(["Teams", "Pull requests", "Work items", "Todo", "Automations"], labels.SkipWhile(l => l != "Teams"));
     }
 }
