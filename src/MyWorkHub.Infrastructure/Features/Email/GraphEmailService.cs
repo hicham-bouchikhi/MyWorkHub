@@ -63,7 +63,8 @@ internal sealed partial class GraphEmailService : IEmailService
             request.Headers.Add(PREFER_HEADER, TEXT_BODY_PREFERENCE);
         }, ct).ConfigureAwait(false);
 
-        return message?.Body?.Content ?? "";
+        // Outlook's HTML-to-text conversion still leaves entities (&amp;, &#39;, &nbsp;) undecoded.
+        return WebUtility.HtmlDecode(message?.Body?.Content ?? "");
     }
 
     private async Task<IEnumerable<EmailItem>> GetFolderEmailsAsync(string folderId, CancellationToken ct)

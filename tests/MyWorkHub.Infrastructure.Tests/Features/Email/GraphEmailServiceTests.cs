@@ -125,6 +125,17 @@ public sealed class GraphEmailServiceTests
         Assert.Contains("outlook.body-content-type=\"text\"", request.Headers["Prefer"]);
     }
 
+    [Fact]
+    public async Task Should_decode_html_entities_left_over_from_the_text_conversion()
+    {
+        using var adapter = new FakeGraphRequestAdapter(
+            _ => new Message { Body = new ItemBody { Content = "Caf&eacute;&nbsp;&amp; croissants &#39;today&#39;" } });
+
+        var body = await Service(adapter, "inbox").GetEmailBodyAsync("msg-1", TestContext.Current.CancellationToken);
+
+        Assert.Equal("Café & croissants 'today'", body);
+    }
+
     // --- Mapping -------------------------------------------------------------------------
 
     [Fact]
@@ -140,6 +151,17 @@ public sealed class GraphEmailServiceTests
             new EmailItem("id-1", "Alice", "Weekly sync", "Preview", _monday.UtcDateTime, true, true, "Inbox"),
             email);
         Assert.Equal(DateTimeKind.Utc, email.ReceivedAt.Kind);
+    }
+
+    [Fact]
+    public void Should_decode_html_entities_in_the_preview()
+    {
+        var message = MessageAt("id-1", _monday);
+        message.BodyPreview = "It&#39;s here &amp; ready&nbsp;now";
+
+        var email = GraphEmailMapper.ToEmailItem(message, "Inbox");
+
+        Assert.Equal("It's here & ready now", email.Preview);
     }
 
     [Fact]

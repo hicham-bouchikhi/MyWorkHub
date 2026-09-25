@@ -1,3 +1,4 @@
+using System.Net;
 using Microsoft.Graph.Models;
 using MyWorkHub.Core.Features.Email;
 
@@ -17,7 +18,10 @@ internal static class GraphEmailMapper
             message.Id ?? "",
             from,
             message.Subject ?? "",
-            message.BodyPreview ?? "",
+            // bodyPreview is Graph's own plain-text truncation, but it still leaves HTML entities
+            // (&amp;, &#39;, &nbsp;) undecoded for messages that originated as HTML -- decode them so the
+            // list doesn't show literal entity codes instead of the punctuation/spaces they represent.
+            WebUtility.HtmlDecode(message.BodyPreview ?? ""),
             message.ReceivedDateTime?.UtcDateTime ?? DateTime.MinValue,
             message.Flag?.FlagStatus == FollowupFlagStatus.Flagged,
             message.IsRead ?? false,
