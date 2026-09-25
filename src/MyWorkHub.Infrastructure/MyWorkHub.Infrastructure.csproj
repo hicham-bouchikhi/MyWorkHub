@@ -25,6 +25,9 @@
          rationale (single-user local DB, never received from an untrusted source). -->
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.4" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
+    <!-- IHttpClientFactory for the Azure DevOps raw-REST client. Azure DevOps is deliberately NOT
+         accessed through its .NET client SDK (it drags in a vulnerable SqlClient transitive dependency). -->
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.10" />
     <!-- Cross-platform credential encryption at rest: DPAPI on Windows, AES-256+HMAC
          with libsecret/Keychain-friendly key storage on Linux/macOS. Replaces the
          Windows-only System.Security.Cryptography.ProtectedData. -->

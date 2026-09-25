@@ -35,6 +35,19 @@ public sealed class InfrastructureCompositionTests
         Assert.Contains(services, d => d.ServiceType == serviceType);
     }
 
+    [Theory]
+    [InlineData(typeof(Core.Features.AzureDevOps.IAzureDevOpsService))]
+    [InlineData(typeof(Core.Features.AzureDevOps.IAzureDevOpsConnectionService))]
+    [InlineData(typeof(Core.Features.AzureDevOps.ISeenMentionRepository))]
+    public void Should_resolve_the_azure_devops_services_through_their_module(Type serviceType)
+    {
+        var services = new ServiceCollection().AddInfrastructure(CreateConfiguration());
+        services.AddSingleton(typeof(Microsoft.Extensions.Logging.ILogger<>), typeof(Microsoft.Extensions.Logging.Abstractions.NullLogger<>));
+        using var provider = services.BuildServiceProvider();
+
+        Assert.NotNull(provider.GetRequiredService(serviceType));
+    }
+
     [Fact]
     public void Should_invoke_each_discovered_module_with_the_configuration()
     {

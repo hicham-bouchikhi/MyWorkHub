@@ -13,7 +13,6 @@ public sealed class AppDbContext : DbContext
     public DbSet<AutomationRun> AutomationRuns => Set<AutomationRun>();
     public DbSet<AppCredential> Credentials => Set<AppCredential>();
     public DbSet<RemoteWorkSchedule> RemoteWorkSchedules => Set<RemoteWorkSchedule>();
-    public DbSet<SeenWorkItemMention> SeenMentions => Set<SeenWorkItemMention>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -31,11 +30,5 @@ public sealed class AppDbContext : DbContext
         modelBuilder.Entity<AutomationRun>()
             .Property(r => r.Status)
             .HasConversion<string>();
-
-        modelBuilder.Entity<SeenWorkItemMention>()
-            .HasKey(m => m.CommentId);
-        modelBuilder.Entity<SeenWorkItemMention>()
-            .Property(m => m.CommentId)
-            .ValueGeneratedNever();
     }
 }

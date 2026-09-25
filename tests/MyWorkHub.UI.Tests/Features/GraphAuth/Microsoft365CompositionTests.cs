@@ -36,8 +36,10 @@ public sealed class Microsoft365CompositionTests
         services.AddUi();
         using var provider = services.BuildServiceProvider();
 
-        Assert.Equal(
-            ["Dashboard", "Email", "Calendar", "Teams", "Todo"],
-            provider.GetRequiredService<IReadOnlyList<NavigationItem>>().Select(i => i.Label));
+        var labels = provider.GetRequiredService<IReadOnlyList<NavigationItem>>().Select(i => i.Label).ToList();
+
+        // Only the Microsoft 365 pages' placement is asserted here; other features may sit in between.
+        Assert.Equal(["Dashboard", "Email", "Calendar", "Teams"], labels.Take(4));
+        Assert.True(labels.IndexOf("Teams") < labels.IndexOf("Todo"));
     }
 }

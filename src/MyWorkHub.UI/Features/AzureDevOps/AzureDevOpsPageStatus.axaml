@@ -1,0 +1,53 @@
+<!-- Shared status strip of every Azure DevOps page (Pull requests, Work items). Inherits the page's
+     DataContext (an AzureDevOpsPageViewModel): "not available" notice, personal-access-token prompt,
+     error, busy bar. -->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MyWorkHub.Presentation.Features.AzureDevOps"
+             x:Class="MyWorkHub.UI.Features.AzureDevOps.AzureDevOpsPageStatus"
+             x:DataType="vm:AzureDevOpsPageViewModel">
+
+    <StackPanel Spacing="8">
+        <ProgressBar IsIndeterminate="True"
+                     IsVisible="{Binding IsBusy}"
+                     Height="2"
+                     MinHeight="2" />
+
+        <TextBlock Text="This feature is not available."
+                   Foreground="{DynamicResource AppTextMutedBrush}"
+                   IsVisible="{Binding !IsAvailable}" />
+
+        <Border Classes="card"
+                Padding="16"
+                IsVisible="{Binding NeedsToken}">
+            <StackPanel Spacing="8">
+                <TextBlock Text="Connect to Azure DevOps" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding ConnectionProblem}"
+                           Foreground="{DynamicResource AppTextMutedBrush}"
+                           TextWrapping="Wrap" />
+                <TextBlock Text="Paste a personal access token with Code (Read) and Work Items (Read) scopes. It is stored encrypted on this machine and shared by Pull requests and Work items."
+                           Foreground="{DynamicResource AppTextMutedBrush}"
+                           TextWrapping="Wrap" />
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <TextBox Grid.Column="0"
+                             PasswordChar="•"
+                             PlaceholderText="Personal access token"
+                             Text="{Binding PersonalAccessToken}">
+                        <TextBox.KeyBindings>
+                            <KeyBinding Gesture="Enter" Command="{Binding ConnectCommand}" />
+                        </TextBox.KeyBindings>
+                    </TextBox>
+                    <Button Grid.Column="1"
+                            Content="Connect"
+                            Command="{Binding ConnectCommand}"
+                            VerticalAlignment="Stretch" />
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <TextBlock Text="{Binding ErrorMessage}"
+                   IsVisible="{Binding ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                   Foreground="{DynamicResource AppDangerBrush}"
+                   TextWrapping="Wrap" />
+    </StackPanel>
+</UserControl>
