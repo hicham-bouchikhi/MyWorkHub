@@ -1,7 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:MyWorkHub.UI.ViewModels"
-        xmlns:nav="using:MyWorkHub.UI.Navigation"
+        xmlns:vm="using:MyWorkHub.Presentation.ViewModels"
+        xmlns:nav="using:MyWorkHub.Core.Navigation"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="720"
@@ -179,33 +179,7 @@
                     BoxShadow="2 0 8 0 #1F000000">
                 <DockPanel>
 
-                    <!-- Developer item pinned at the bottom -->
-                    <StackPanel DockPanel.Dock="Bottom">
-                        <Separator Margin="8,4" />
-                        <ListBox Classes="nav"
-                                 ItemsSource="{Binding BottomNavItems}"
-                                 SelectedItem="{Binding SelectedItem}"
-                                 Background="Transparent"
-                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                 Padding="4">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate x:DataType="nav:NavigationItem">
-                                    <StackPanel Orientation="Horizontal" Spacing="12">
-                                        <TextBlock Text="{Binding Icon}"
-                                                   FontSize="18"
-                                                   Width="24"
-                                                   TextAlignment="Center"
-                                                   VerticalAlignment="Center" />
-                                        <TextBlock Text="{Binding Label}"
-                                                   VerticalAlignment="Center"
-                                                   IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).IsSidebarExpanded}" />
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-                    </StackPanel>
-
-                    <!-- Main navigation -->
+                    <!-- Main navigation: one entry per discovered presentation module. -->
                     <ListBox Classes="nav"
                              ItemsSource="{Binding NavigationItems}"
                              SelectedItem="{Binding SelectedItem}"

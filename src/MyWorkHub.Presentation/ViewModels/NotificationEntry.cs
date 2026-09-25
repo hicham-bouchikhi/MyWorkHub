@@ -1,39 +1,51 @@
 using System.Globalization;
 using MyWorkHub.Core.Abstractions;
+using MyWorkHub.Core.Navigation;
+using MyWorkHub.Presentation.Navigation;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
-namespace MyWorkHub.UI.ViewModels;
+namespace MyWorkHub.Presentation.ViewModels;
 
 /// <summary>One entry in the notification history (bell flyout). Immutable content; only the
 /// read state changes after creation.</summary>
 public sealed partial class NotificationEntry : ObservableObject
 {
-    private readonly Action? _onActivated;
+    private readonly INavigationService _navigation;
 
     public NotificationEntry(
         string title,
         string message,
         NotificationSeverity severity,
         DateTime timestamp,
-        Action? onActivated = null)
+        INavigationService navigation,
+        NavigationTarget? target = null)
     {
+        ArgumentNullException.ThrowIfNull(navigation);
+
         Title = title;
         Message = message;
         Severity = severity;
         Timestamp = timestamp;
-        _onActivated = onActivated;
+        Target = target;
+        _navigation = navigation;
     }
 
-    /// <summary>True when this entry has an action (clicking it navigates somewhere).</summary>
-    public bool IsActionable => _onActivated is not null;
+    /// <summary>Where activating this entry navigates to, or null when it is informational only.</summary>
+    public NavigationTarget? Target { get; }
 
-    /// <summary>Runs the entry's action (if any) and marks it read.</summary>
+    /// <summary>True when this entry has a destination (clicking it navigates somewhere).</summary>
+    public bool IsActionable => Target is not null;
+
+    /// <summary>Marks the entry read and navigates to its <see cref="Target"/> (if any).</summary>
     [RelayCommand]
     private void Activate()
     {
         IsRead = true;
-        _onActivated?.Invoke();
+        if (Target is not null)
+        {
+            _navigation.NavigateTo(Target);
+        }
     }
 
     public string Title { get; }

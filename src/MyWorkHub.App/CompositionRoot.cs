@@ -1,8 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using MyWorkHub.Core;
 using MyWorkHub.Core.Configuration;
 using MyWorkHub.Infrastructure.Data;
 using MyWorkHub.Infrastructure.DependencyInjection;
+using MyWorkHub.UI.Composition;
 using MyWorkHub.UI.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -14,28 +16,23 @@ using Serilog;
 namespace MyWorkHub.App;
 
 /// <summary>
-/// The dependency-injection composition root: wires configuration, logging,
-/// infrastructure, and the UI graph into a single <see cref="ServiceProvider"/>.
+/// The dependency-injection composition root: wires configuration, logging, infrastructure, and the
+/// UI graph (each layer discovering its own feature modules) into a single <see cref="ServiceProvider"/>,
+/// then validates that the discovered modules fit together before the app starts.
 /// </summary>
 internal static class CompositionRoot
 {
+    [RequiresUnreferencedCode("Feature modules are discovered via reflection.")]
     public static ServiceProvider Build()
     {
         SeedUserConfig();
-        SeedReviewAgent();
         ConfigureSerilog();
 
         var configuration = BuildConfiguration();
         var services = new ServiceCollection();
 
         services.AddSingleton<IConfiguration>(configuration);
-        services.Configure<AzureAdOptions>(configuration.GetSection(AzureAdOptions.SECTION));
-        services.Configure<AzureDevOpsOptions>(configuration.GetSection(AzureDevOpsOptions.SECTION));
-        services.Configure<AutomationOptions>(configuration.GetSection(AutomationOptions.SECTION));
-        services.Configure<ExternalSitesOptions>(configuration.GetSection(ExternalSitesOptions.SECTION));
         services.Configure<UiOptions>(configuration.GetSection(UiOptions.SECTION));
-        services.Configure<WorkspaceOptions>(configuration.GetSection(WorkspaceOptions.SECTION));
-        services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SECTION));
 
         services.AddLogging(builder =>
         {
@@ -43,18 +40,31 @@ internal static class CompositionRoot
             builder.AddSerilog(Log.Logger, dispose: false);
         });
 
-        // Infrastructure (EF Core + DPAPI credential store) must be registered
-        // before anything that depends on credentials (ARCHITECTURE.md §12).
-        services.AddInfrastructure();
+        // Infrastructure (EF Core + Data Protection credential store, then feature modules) must be
+        // registered before anything that depends on credentials (ARCHITECTURE.md §12).
+        services.AddInfrastructure(configuration);
 
-        // UI shell: navigation, toast notifications, pages and the main window.
+        // UI shell: navigation, toast notifications, feature pages + views and the main window.
         services.AddUi();
 
         // Quartz scheduler: registers ISchedulerFactory (singleton) with a Microsoft DI
         // job factory so jobs resolve from the container. Jobs are scheduled in later phases.
         services.AddQuartz();
 
-        return services.BuildServiceProvider();
+        var provider = services.BuildServiceProvider();
+        try
+        {
+            // Fail loud at launch: every page view model must resolve and have a view.
+            ShellCompositionValidator.Validate(services, provider);
+        }
+        catch (InvalidOperationException ex)
+        {
+            Log.Fatal(ex, "Startup composition validation failed");
+            provider.Dispose();
+            throw;
+        }
+
+        return provider;
     }
 
     /// <summary>Applies any pending EF Core migrations on startup.</summary>
@@ -78,21 +88,6 @@ internal static class CompositionRoot
         if (File.Exists(shipped))
         {
             File.Copy(shipped, AppPaths.UserAppSettingsPath);
-        }
-    }
-
-    /// <summary>Seeds the Claude Code review-agent template on first run.</summary>
-    private static void SeedReviewAgent()
-    {
-        if (File.Exists(AppPaths.ReviewAgentPath))
-        {
-            return;
-        }
-
-        var shipped = Path.Combine(AppContext.BaseDirectory, "review-agent.md");
-        if (File.Exists(shipped))
-        {
-            File.Copy(shipped, AppPaths.ReviewAgentPath);
         }
     }
 

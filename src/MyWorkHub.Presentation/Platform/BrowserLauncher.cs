@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using MyWorkHub.Core.Abstractions;
 
-namespace MyWorkHub.UI.Platform;
+namespace MyWorkHub.Presentation.Platform;
 
 /// <summary>
 /// <see cref="IBrowserLauncher"/> backed by the OS shell. <c>UseShellExecute = true</c>

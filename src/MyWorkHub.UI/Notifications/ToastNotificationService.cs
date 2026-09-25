@@ -2,7 +2,8 @@ using Avalonia.Controls;
 using Avalonia.Controls.Notifications;
 using Avalonia.Threading;
 using MyWorkHub.Core.Abstractions;
-using MyWorkHub.UI.ViewModels;
+using MyWorkHub.Core.Navigation;
+using MyWorkHub.Presentation.ViewModels;
 
 namespace MyWorkHub.UI.Notifications;
 
@@ -41,17 +42,17 @@ public sealed class ToastNotificationService : INotificationService
         string title,
         string message,
         NotificationSeverity severity = NotificationSeverity.INFORMATION,
-        Action? onActivated = null)
+        NavigationTarget? target = null)
     {
-        // Clicking the toast runs the same action as clicking its bell-history entry.
-        var notification = new Notification(title, message, ToNotificationType(severity), onClick: onActivated);
-
         // May be called from a background thread (automations); marshal to the UI thread.
         // The history append runs on the same UI-thread post so the bound collection is safe.
         Dispatcher.UIThread.Post(() =>
         {
-            _manager?.Show(notification);
-            _center.Add(title, message, severity, onActivated);
+            var entry = _center.Add(title, message, severity, target);
+
+            // Clicking the toast goes through the history entry, so it navigates AND marks it read.
+            Action? onClick = entry.IsActionable ? () => entry.ActivateCommand.Execute(null) : null;
+            _manager?.Show(new Notification(title, message, ToNotificationType(severity), onClick: onClick));
         });
     }
 

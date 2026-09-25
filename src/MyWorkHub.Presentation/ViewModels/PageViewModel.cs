@@ -1,8 +1,9 @@
-namespace MyWorkHub.UI.ViewModels;
+namespace MyWorkHub.Presentation.ViewModels;
 
 /// <summary>
-/// Base for a page shown in the main content area. Phase 3 ships these as titled
-/// placeholders; later phases replace the bodies with real content and dependencies.
+/// Base for a page shown in the main content area. Every registered <see cref="PageViewModel"/>
+/// must have a view mapped by some <see cref="Core.Modules.IViewModule"/> — startup validation fails
+/// otherwise.
 /// </summary>
 public abstract class PageViewModel : ViewModelBase
 {

@@ -4,6 +4,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
 using MyWorkHub.Core.Configuration;
+using MyWorkHub.UI;
 using MyWorkHub.UI.Theming;
 using MyWorkHub.UI.Views;
 using Microsoft.Extensions.DependencyInjection;
@@ -70,6 +71,9 @@ public partial class App : Application
 
             // Merge the configured colour palette before building the UI so its App* tokens resolve.
             PaletteManager.Apply(uiOptions.Palette);
+
+            // Page views are resolved through the module-built registry, not a naming convention.
+            DataTemplates.Add(_services.GetRequiredService<ViewLocator>());
 
             _mainWindow = _services.GetRequiredService<MainWindow>();
             _mainWindow.Closing += OnMainWindowClosing;

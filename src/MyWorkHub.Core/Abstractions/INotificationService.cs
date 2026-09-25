@@ -1,3 +1,5 @@
+using MyWorkHub.Core.Navigation;
+
 namespace MyWorkHub.Core.Abstractions;
 
 /// <summary>Severity of a user-facing notification, independent of any UI toolkit.</summary>
@@ -19,13 +21,13 @@ public interface INotificationService
 {
     /// <summary>
     /// Shows a notification with the given title, message and severity. When
-    /// <paramref name="onActivated"/> is supplied, clicking the toast or its bell-history entry
-    /// runs it (e.g. to navigate to the relevant page) — this keeps the callback UI-agnostic so
-    /// callers in any layer can wire an action without referencing navigation types.
+    /// <paramref name="target"/> is supplied, clicking the toast or its bell-history entry navigates
+    /// there — including to a specific element on the page when <see cref="NavigationTarget.ElementId"/>
+    /// is set and the page supports deep links.
     /// </summary>
     void Notify(
         string title,
         string message,
         NotificationSeverity severity = NotificationSeverity.INFORMATION,
-        Action? onActivated = null);
+        NavigationTarget? target = null);
 }

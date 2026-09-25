@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -7,5 +7,12 @@
     <!-- Pure domain layer: proven AOT/trim-clean, so opt into the analyzers as a tripwire (see Directory.Build.props). -->
     <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Abstractions only: the feature-module contracts (IInfrastructureModule / IPresentationModule)
+         take an IServiceCollection / IConfiguration so each layer can register its own services. -->
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.10" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
+  </ItemGroup>
 
 </Project>
