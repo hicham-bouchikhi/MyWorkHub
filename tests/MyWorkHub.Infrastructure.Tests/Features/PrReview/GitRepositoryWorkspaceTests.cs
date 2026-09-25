@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Text;
+using MyWorkHub.Core.Abstractions;
 using MyWorkHub.Core.Features.AzureDevOps;
 using MyWorkHub.Infrastructure.Features.AzureDevOps;
 using MyWorkHub.Infrastructure.Features.PrReview;
@@ -19,7 +20,7 @@ public sealed class GitRepositoryWorkspaceTests : IDisposable
 
     public GitRepositoryWorkspaceTests()
     {
-        _credentials.Save(AzureDevOpsClient.PAT_CREDENTIAL_KEY, PAT);
+        _credentials.Save(CredentialKeys.AZURE_DEVOPS_PAT, PAT);
     }
 
     public void Dispose() => _workFolder.Delete(recursive: true);
@@ -105,7 +106,7 @@ public sealed class GitRepositoryWorkspaceTests : IDisposable
     {
         await Assert.ThrowsAsync<AzureDevOpsNotConnectedException>(() => Workspace(organization: null).PrepareAsync(Pr(), ct: TestContext.Current.CancellationToken));
 
-        _credentials.Delete(AzureDevOpsClient.PAT_CREDENTIAL_KEY);
+        _credentials.Delete(CredentialKeys.AZURE_DEVOPS_PAT);
         await Assert.ThrowsAsync<AzureDevOpsNotConnectedException>(() => Workspace().PrepareAsync(Pr(), ct: TestContext.Current.CancellationToken));
 
         Assert.Empty(_processes.Requests);

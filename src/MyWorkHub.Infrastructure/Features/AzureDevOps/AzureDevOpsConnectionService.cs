@@ -5,7 +5,7 @@ namespace MyWorkHub.Infrastructure.Features.AzureDevOps;
 
 /// <summary>
 /// <see cref="IAzureDevOpsConnectionService"/>: verifies a personal access token against the organization,
-/// then stores it (encrypted) under <see cref="AzureDevOpsClient.PAT_CREDENTIAL_KEY"/>, where every
+/// then stores it (encrypted) under <see cref="CredentialKeys.AZURE_DEVOPS_PAT"/>, where every
 /// Azure DevOps request picks it up.
 /// </summary>
 internal sealed class AzureDevOpsConnectionService : IAzureDevOpsConnectionService
@@ -46,9 +46,9 @@ internal sealed class AzureDevOpsConnectionService : IAzureDevOpsConnectionServi
         }
 
         // Only a token Azure DevOps accepted replaces the stored one.
-        _credentials.Save(AzureDevOpsClient.PAT_CREDENTIAL_KEY, token);
+        _credentials.Save(CredentialKeys.AZURE_DEVOPS_PAT, token);
         return AzureDevOpsConnectResult.Success(user.DisplayName);
     }
 
-    public void Disconnect() => _credentials.Delete(AzureDevOpsClient.PAT_CREDENTIAL_KEY);
+    public void Disconnect() => _credentials.Delete(CredentialKeys.AZURE_DEVOPS_PAT);
 }

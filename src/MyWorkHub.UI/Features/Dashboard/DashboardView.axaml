@@ -8,7 +8,7 @@
         <TextBlock Text="{Binding Title}"
                    FontSize="24"
                    FontWeight="SemiBold" />
-        <TextBlock Text="No features are installed yet."
+        <TextBlock Text="Pick a section from the sidebar."
                    Foreground="{DynamicResource AppTextMutedBrush}" />
     </StackPanel>
 </UserControl>

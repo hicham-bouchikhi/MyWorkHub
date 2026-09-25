@@ -25,12 +25,6 @@ internal sealed class AzureDevOpsClient
     /// <summary>Name of the <see cref="IHttpClientFactory"/> client configured by the module.</summary>
     public const string HTTP_CLIENT_NAME = "AzureDevOps";
 
-    /// <summary>
-    /// Credential-store key of the personal access token. Same value as the pre-rewrite app used, so a
-    /// token saved by it keeps working.
-    /// </summary>
-    public const string PAT_CREDENTIAL_KEY = "AZDO_PAT";
-
     // connectionData only exists as a preview resource: the GA "7.1" is rejected with a 400.
     private const string CONNECTION_DATA_URL = "_apis/connectionData?api-version=7.1-preview.1";
 
@@ -98,7 +92,7 @@ internal sealed class AzureDevOpsClient
     {
         // Resolve the organization first so a missing URL is reported before a missing token.
         _ = OrganizationUrl;
-        var token = _credentials.Get(PAT_CREDENTIAL_KEY);
+        var token = _credentials.Get(CredentialKeys.AZURE_DEVOPS_PAT);
         return string.IsNullOrWhiteSpace(token) ? throw new AzureDevOpsNotConnectedException() : token;
     }
 

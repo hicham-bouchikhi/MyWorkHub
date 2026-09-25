@@ -4,15 +4,11 @@ using MyWorkHub.Core.Features.Automations;
 namespace MyWorkHub.Infrastructure.Features.Automations;
 
 /// <summary>
-/// <see cref="IAutomationCredentialService"/> over the encrypted <see cref="ICredentialStore"/>. Key names
-/// (<c>TCL_USER</c>, <c>TCL_PASSWORD</c>, <c>PEOPLENET_USER</c>, …) are the ones the pre-rewrite app used, so
-/// logins saved by it keep working.
+/// <see cref="IAutomationCredentialService"/> over the encrypted <see cref="ICredentialStore"/>, storing
+/// each site's login under its <see cref="CredentialKeys"/> user/password pair.
 /// </summary>
 internal sealed class AutomationCredentialService : IAutomationCredentialService
 {
-    private const string USER_SUFFIX = "_USER";
-    private const string PASSWORD_SUFFIX = "_PASSWORD";
-
     private readonly ICredentialStore _store;
 
     public AutomationCredentialService(ICredentialStore store)
@@ -23,8 +19,9 @@ internal sealed class AutomationCredentialService : IAutomationCredentialService
 
     public SiteCredentials? Get(AutomationSite site)
     {
-        var userName = _store.Get(KeyPrefix(site) + USER_SUFFIX);
-        var password = _store.Get(KeyPrefix(site) + PASSWORD_SUFFIX);
+        var (userKey, passwordKey) = KeysFor(site);
+        var userName = _store.Get(userKey);
+        var password = _store.Get(passwordKey);
         return string.IsNullOrEmpty(userName) || string.IsNullOrEmpty(password)
             ? null
             : new SiteCredentials(userName, password);
@@ -36,22 +33,24 @@ internal sealed class AutomationCredentialService : IAutomationCredentialService
         ArgumentException.ThrowIfNullOrWhiteSpace(credentials.UserName, nameof(credentials));
         ArgumentException.ThrowIfNullOrWhiteSpace(credentials.Password, nameof(credentials));
 
-        _store.Save(KeyPrefix(site) + USER_SUFFIX, credentials.UserName.Trim());
-        _store.Save(KeyPrefix(site) + PASSWORD_SUFFIX, credentials.Password);
+        var (userKey, passwordKey) = KeysFor(site);
+        _store.Save(userKey, credentials.UserName.Trim());
+        _store.Save(passwordKey, credentials.Password);
     }
 
     public void Clear(AutomationSite site)
     {
-        _store.Delete(KeyPrefix(site) + USER_SUFFIX);
-        _store.Delete(KeyPrefix(site) + PASSWORD_SUFFIX);
+        var (userKey, passwordKey) = KeysFor(site);
+        _store.Delete(userKey);
+        _store.Delete(passwordKey);
     }
 
-    private static string KeyPrefix(AutomationSite site)
+    private static (string UserKey, string PasswordKey) KeysFor(AutomationSite site)
         => site switch
         {
-            AutomationSite.TCL => "TCL",
-            AutomationSite.PEOPLENET => "PEOPLENET",
-            AutomationSite.MWORK => "MWORK",
+            AutomationSite.TCL => (CredentialKeys.TCL_USER, CredentialKeys.TCL_PASSWORD),
+            AutomationSite.PEOPLENET => (CredentialKeys.PEOPLENET_USER, CredentialKeys.PEOPLENET_PASSWORD),
+            AutomationSite.MWORK => (CredentialKeys.MWORK_USER, CredentialKeys.MWORK_PASSWORD),
             _ => throw new ArgumentOutOfRangeException(nameof(site), site, "Unknown automation site."),
         };
 }

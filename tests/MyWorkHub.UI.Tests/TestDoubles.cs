@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using Avalonia.Controls;
+using MyWorkHub.Core.Abstractions;
 using MyWorkHub.Core.Modules;
 using MyWorkHub.Core.Navigation;
 using MyWorkHub.Presentation.Navigation;
@@ -22,6 +23,15 @@ internal sealed class FakeNavigationService : INavigationService
         Requests.Add(target);
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentPage)));
     }
+}
+
+/// <summary>Records every notification raised, including its navigation target.</summary>
+internal sealed class RecordingNotificationService : INotificationService
+{
+    public List<(string Title, string Message, NotificationSeverity Severity, NavigationTarget? Target)> Sent { get; } = [];
+
+    public void Notify(string title, string message, NotificationSeverity severity = NotificationSeverity.INFORMATION, NavigationTarget? target = null)
+        => Sent.Add((title, message, severity, target));
 }
 
 /// <summary>A plain page with no deep-link support.</summary>

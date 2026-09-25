@@ -57,7 +57,7 @@ internal sealed class GitRepositoryWorkspace : IRepositoryWorkspace
         var organization = _azureDevOps.OrganizationUrl
             ?? throw new AzureDevOpsNotConnectedException(
                 $"The Azure DevOps organization URL is not configured ({AzureDevOpsOptions.SECTION}:OrganizationUrl).");
-        var token = _credentials.Get(AzureDevOpsClient.PAT_CREDENTIAL_KEY);
+        var token = _credentials.Get(CredentialKeys.AZURE_DEVOPS_PAT);
         if (string.IsNullOrWhiteSpace(token))
         {
             throw new AzureDevOpsNotConnectedException();

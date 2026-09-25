@@ -206,12 +206,4 @@ public sealed class PullRequestReviewTests
             return Task.FromResult(Result);
         }
     }
-
-    private sealed class RecordingNotificationService : INotificationService
-    {
-        public List<(string Title, string Message, NotificationSeverity Severity, NavigationTarget? Target)> Sent { get; } = [];
-
-        public void Notify(string title, string message, NotificationSeverity severity = NotificationSeverity.INFORMATION, NavigationTarget? target = null)
-            => Sent.Add((title, message, severity, target));
-    }
 }

@@ -54,12 +54,17 @@ internal static class CompositionRoot
         var provider = services.BuildServiceProvider();
         try
         {
+            // Migrate BEFORE validating: validation constructs every page view model, and some read the
+            // database while constructing (e.g. Automations reads saved-login state from the credential
+            // store) — on a first run the tables would not exist yet.
+            InitializeDatabase(provider);
+
             // Fail loud at launch: every page view model must resolve and have a view.
             ShellCompositionValidator.Validate(services, provider);
         }
-        catch (InvalidOperationException ex)
+        catch (Exception ex)
         {
-            Log.Fatal(ex, "Startup composition validation failed");
+            Log.Fatal(ex, "Startup composition failed");
             provider.Dispose();
             throw;
         }
@@ -67,11 +72,9 @@ internal static class CompositionRoot
         return provider;
     }
 
-    /// <summary>Applies any pending EF Core migrations on startup.</summary>
-    public static void InitializeDatabase(IServiceProvider services)
+    /// <summary>Applies any pending EF Core migrations.</summary>
+    private static void InitializeDatabase(IServiceProvider services)
     {
-        ArgumentNullException.ThrowIfNull(services);
-
         using var db = services.GetRequiredService<IDbContextFactory<AppDbContext>>().CreateDbContext();
         db.Database.Migrate();
     }

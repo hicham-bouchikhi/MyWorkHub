@@ -1,5 +1,6 @@
 using System.Net;
 using Microsoft.Extensions.Logging.Abstractions;
+using MyWorkHub.Core.Abstractions;
 using MyWorkHub.Infrastructure.Features.AzureDevOps;
 using MyWorkHub.Infrastructure.Tests.TestDoubles;
 
@@ -35,7 +36,7 @@ internal sealed class AzureDevOpsFixture : IDisposable
 
         if (storedToken is not null)
         {
-            Credentials.Save(AzureDevOpsClient.PAT_CREDENTIAL_KEY, storedToken);
+            Credentials.Save(CredentialKeys.AZURE_DEVOPS_PAT, storedToken);
         }
 
         var options = new AzureDevOpsOptions(organizationUrl is null ? null : new Uri(organizationUrl), projects ?? ["Alpha"]);

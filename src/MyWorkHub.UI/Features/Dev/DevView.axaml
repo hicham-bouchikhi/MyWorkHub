@@ -1,0 +1,66 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MyWorkHub.Presentation.Features.Dev"
+             xmlns:core="using:MyWorkHub.Core.Abstractions"
+             x:Class="MyWorkHub.UI.Features.Dev.DevView"
+             x:Name="Root"
+             x:DataType="vm:DevViewModel">
+
+    <ScrollViewer Padding="24">
+        <StackPanel Spacing="24" MaxWidth="720" HorizontalAlignment="Left">
+
+            <StackPanel Spacing="4">
+                <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="SemiBold" />
+                <TextBlock Text="Testing utilities for the notification and navigation pipeline."
+                           Foreground="{DynamicResource AppTextMutedBrush}" />
+            </StackPanel>
+
+            <TextBlock Text="No notification service is registered."
+                       Foreground="{DynamicResource AppDangerBrush}"
+                       IsVisible="{Binding !CanNotify}" />
+
+            <!-- Severity rendering: informational only, clicking them navigates nowhere. -->
+            <StackPanel Spacing="8">
+                <TextBlock Text="Notifications" FontSize="16" FontWeight="SemiBold" />
+                <TextBlock Text="One toast per severity, with no navigation target."
+                           Foreground="{DynamicResource AppTextMutedBrush}"
+                           TextWrapping="Wrap" />
+                <ItemsControl ItemsSource="{x:Static vm:DevViewModel.Severities}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel ItemSpacing="8" LineSpacing="8" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="core:NotificationSeverity">
+                            <Button Content="{Binding}"
+                                    Command="{Binding #Root.((vm:DevViewModel)DataContext).SendTestNotificationCommand}"
+                                    CommandParameter="{Binding}" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <Separator />
+
+            <!-- Deep links: the rewrite's core feature, end to end. -->
+            <StackPanel Spacing="8">
+                <TextBlock Text="Deep-link notifications" FontSize="16" FontWeight="SemiBold" />
+                <TextBlock Foreground="{DynamicResource AppTextMutedBrush}" TextWrapping="Wrap"
+                           Text="Each button loads the first real row of that page and sends a notification targeting it. Click the toast (or its bell entry): the page must open, scroll to the row and flash it. When no row can be loaded, a synthetic id is sent instead — the page must open and highlight nothing." />
+                <WrapPanel ItemSpacing="8" LineSpacing="8">
+                    <Button Content="Todo row" Command="{Binding SendTodoDeepLinkCommand}" />
+                    <Button Content="Email row" Command="{Binding SendEmailDeepLinkCommand}" />
+                    <Button Content="Pull request row" Command="{Binding SendPullRequestDeepLinkCommand}" />
+                    <Button Content="Work item row" Command="{Binding SendWorkItemDeepLinkCommand}" />
+                    <Button Content="Mention row" Command="{Binding SendMentionDeepLinkCommand}" />
+                </WrapPanel>
+                <TextBlock Text="{Binding LastResult}"
+                           IsVisible="{Binding LastResult, Converter={x:Static ObjectConverters.IsNotNull}}"
+                           Foreground="{DynamicResource AppTextMutedBrush}"
+                           TextWrapping="Wrap" />
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

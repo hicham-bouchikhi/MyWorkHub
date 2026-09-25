@@ -46,13 +46,13 @@
                         VerticalAlignment="Center"
                         ToolTip.Tip="Notifications">
                     <Panel>
-                        <!-- Monochrome bell (Segoe MDL2 "Ringer") so Foreground tints it.
-                             Tints accent and pulses while any operation runs (Classes.bellActive). -->
-                        <TextBlock Classes="bell"
-                                   Classes.bellActive="{Binding Notifications.HasActive}"
-                                   Text="&#xE7E7;"
-                                   FontFamily="Segoe MDL2 Assets"
-                                   FontSize="16" />
+                        <!-- Monochrome vector bell (a PathIcon, not an icon-font glyph, so it renders
+                             on every OS) whose Foreground the palette tints. Tints accent and pulses
+                             while any operation runs (Classes.bellActive). -->
+                        <PathIcon Classes="bell"
+                                  Classes.bellActive="{Binding Notifications.HasActive}"
+                                  Width="16" Height="16"
+                                  Data="M21,19V20H3V19L5,17V11C5,7.9 7.03,5.17 10,4.29C10,4.19 10,4.1 10,4A2,2 0 0,1 12,2A2,2 0 0,1 14,4C14,4.1 14,4.19 14,4.29C16.97,5.17 19,7.9 19,11V17L21,19M14,21A2,2 0 0,1 12,23A2,2 0 0,1 10,21" />
                         <Border IsVisible="{Binding Notifications.HasUnread}"
                                 Background="{DynamicResource AppDangerBrush}"
                                 CornerRadius="8"

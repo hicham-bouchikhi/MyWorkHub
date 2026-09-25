@@ -28,7 +28,7 @@ public sealed class MainWindowViewModelTests
     {
         var vm = CreateDefaultShell();
 
-        Assert.Equal(["Dashboard", "Email", "Calendar", "Teams", "Pull requests", "Work items", "Todo", "Automations"], vm.NavigationItems.Select(i => i.Label));
+        Assert.Equal(["Dashboard", "Email", "Calendar", "Teams", "Pull requests", "Work items", "Todo", "Automations", "Developer"], vm.NavigationItems.Select(i => i.Label));
     }
 
     [Fact]
@@ -46,7 +46,7 @@ public sealed class MainWindowViewModelTests
         var vm = CreateShellWithSampleModule();
 
         // Sample's Order (10) ties with Email's (label breaks the tie) and sorts ahead of Calendar's (20).
-        Assert.Equal(["Dashboard", "Email", "Sample", "Calendar", "Teams", "Pull requests", "Work items", "Todo", "Automations"], vm.NavigationItems.Select(i => i.Label));
+        Assert.Equal(["Dashboard", "Email", "Sample", "Calendar", "Teams", "Pull requests", "Work items", "Todo", "Automations", "Developer"], vm.NavigationItems.Select(i => i.Label));
     }
 
     [Fact]

@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using MyWorkHub.Core.Abstractions;
 using MyWorkHub.Infrastructure.Features.AzureDevOps;
 using static MyWorkHub.Infrastructure.Tests.TestDoubles.StubHttpMessageHandler;
 
@@ -18,7 +19,7 @@ public sealed class AzureDevOpsConnectionServiceTests
 
         Assert.True(result.Succeeded);
         Assert.Equal(AzureDevOpsFixture.ME_NAME, result.DisplayName);
-        Assert.Equal("fresh-pat", fixture.Credentials.Get(AzureDevOpsClient.PAT_CREDENTIAL_KEY));
+        Assert.Equal("fresh-pat", fixture.Credentials.Get(CredentialKeys.AZURE_DEVOPS_PAT));
         var check = Assert.Single(fixture.Handler.Requests);
         Assert.Equal("/cegid/_apis/connectionData", check.Uri.AbsolutePath);
         Assert.Equal("Basic " + Convert.ToBase64String(Encoding.ASCII.GetBytes(":fresh-pat")), check.Authorization);
@@ -34,7 +35,7 @@ public sealed class AzureDevOpsConnectionServiceTests
 
         Assert.False(result.Succeeded);
         Assert.Contains("rejected", result.ErrorMessage, StringComparison.Ordinal);
-        Assert.Equal(AzureDevOpsFixture.PAT, fixture.Credentials.Get(AzureDevOpsClient.PAT_CREDENTIAL_KEY));
+        Assert.Equal(AzureDevOpsFixture.PAT, fixture.Credentials.Get(CredentialKeys.AZURE_DEVOPS_PAT));
     }
 
     [Fact]
@@ -82,13 +83,6 @@ public sealed class AzureDevOpsConnectionServiceTests
 
         fixture.Connection.Disconnect();
 
-        Assert.Null(fixture.Credentials.Get(AzureDevOpsClient.PAT_CREDENTIAL_KEY));
-    }
-
-    [Fact]
-    public void Should_store_the_token_under_the_key_the_previous_app_used()
-    {
-        // A token saved by the pre-rewrite app (CredentialKeys.AZURE_DEVOPS_PAT) keeps working.
-        Assert.Equal("AZDO_PAT", AzureDevOpsClient.PAT_CREDENTIAL_KEY);
+        Assert.Null(fixture.Credentials.Get(CredentialKeys.AZURE_DEVOPS_PAT));
     }
 }
