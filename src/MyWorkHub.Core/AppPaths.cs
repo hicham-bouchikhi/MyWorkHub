@@ -20,6 +20,9 @@ public static class AppPaths
     /// <summary>Data Protection key ring (encrypts stored credentials); cross-platform.</summary>
     public static string DataProtectionKeysDir => Path.Combine(RootDir, "keys");
 
+    /// <summary>MSAL (Microsoft 365 sign-in) token cache, encrypted per-OS by the MSAL cache helper.</summary>
+    public static string MsalTokenCachePath => Path.Combine(RootDir, "msal_token_cache.bin");
+
     /// <summary>Creates the runtime folder tree on first launch. Idempotent.</summary>
     public static void EnsureCreated()
     {

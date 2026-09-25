@@ -22,6 +22,19 @@ public sealed class InfrastructureCompositionTests
         Assert.DoesNotContain(services, d => d.ServiceType == typeof(SampleMarker));
     }
 
+    [Theory]
+    [InlineData(typeof(Core.Features.GraphAuth.IGraphConnectionService))]
+    [InlineData(typeof(Microsoft.Graph.GraphServiceClient))]
+    [InlineData(typeof(Core.Features.Email.IEmailService))]
+    [InlineData(typeof(Core.Features.Calendar.ICalendarService))]
+    [InlineData(typeof(Core.Features.Teams.ITeamsService))]
+    public void Should_register_the_microsoft_365_services_through_their_modules(Type serviceType)
+    {
+        var services = new ServiceCollection().AddInfrastructure(CreateConfiguration());
+
+        Assert.Contains(services, d => d.ServiceType == serviceType);
+    }
+
     [Fact]
     public void Should_invoke_each_discovered_module_with_the_configuration()
     {

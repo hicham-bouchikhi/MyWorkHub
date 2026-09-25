@@ -11,6 +11,14 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Core" Version="10.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />
+    <!-- Microsoft Graph (mail, calendar, Teams chats). 6.x is Kiota-based: authentication is an
+         IAccessTokenProvider behind BaseBearerTokenAuthenticationProvider, and the
+         GraphServiceClient(IRequestAdapter) constructor is the unit-test seam. -->
+    <PackageReference Include="Microsoft.Graph" Version="6.7.0" />
+    <!-- MSAL public client (system-browser sign-in) + the per-OS encrypted token cache helper. -->
+    <PackageReference Include="Microsoft.Identity.Client" Version="4.90.0" />
+    <PackageReference Include="Microsoft.Identity.Client.Extensions.Msal" Version="4.90.0" />
     <!-- Sqlite.Core ships no native provider; pair it with the e_sqlite3 bundle,
          which is cross-platform (Windows/Linux/macOS). The bundled native lib is
          flagged by GHSA-2m69-gcr7-jv3q — suppressed in Directory.Build.props with

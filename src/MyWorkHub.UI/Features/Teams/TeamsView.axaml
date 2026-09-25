@@ -1,0 +1,62 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MyWorkHub.Presentation.Features.Teams"
+             xmlns:graph="using:MyWorkHub.UI.Features.GraphAuth"
+             x:Class="MyWorkHub.UI.Features.Teams.TeamsView"
+             x:Name="Root"
+             x:DataType="vm:TeamsViewModel">
+
+    <UserControl.Styles>
+        <Style Selector="TextBlock.unread">
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,*" Margin="24">
+
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,12">
+            <TextBlock Grid.Column="0" Text="{Binding Title}" FontSize="24" FontWeight="SemiBold" />
+            <Button Grid.Column="1"
+                    Content="Refresh"
+                    Command="{Binding RefreshCommand}"
+                    IsVisible="{Binding IsAvailable}"
+                    VerticalAlignment="Center" />
+        </Grid>
+
+        <graph:GraphPageStatus Grid.Row="1" Margin="0,0,0,12" />
+
+        <ScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Disabled">
+            <ItemsControl ItemsSource="{Binding Items}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:TeamsChatRowViewModel">
+                        <Button Classes="card"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Stretch"
+                                Margin="0,0,0,6"
+                                IsEnabled="{Binding CanOpen}"
+                                ToolTip.Tip="Open in Teams"
+                                Command="{Binding #Root.((vm:TeamsViewModel)DataContext).OpenChatCommand}"
+                                CommandParameter="{Binding}">
+                            <StackPanel Spacing="2">
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding Title}"
+                                               Classes.unread="{Binding IsUnread}"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding LastMessageText}"
+                                               FontSize="12"
+                                               Foreground="{DynamicResource AppTextMutedBrush}" />
+                                </Grid>
+                                <TextBlock Text="{Binding Preview}"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource AppTextMutedBrush}"
+                                           TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

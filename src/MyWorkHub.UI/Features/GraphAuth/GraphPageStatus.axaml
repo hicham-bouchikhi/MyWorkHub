@@ -1,0 +1,41 @@
+<!-- Shared status strip of every Microsoft 365 page (Email, Calendar, Teams). Inherits the page's
+     DataContext (a GraphPageViewModel): "not available" notice, sign-in prompt, error, busy bar. -->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MyWorkHub.Presentation.Features.GraphAuth"
+             x:Class="MyWorkHub.UI.Features.GraphAuth.GraphPageStatus"
+             x:DataType="vm:GraphPageViewModel">
+
+    <StackPanel Spacing="8">
+        <ProgressBar IsIndeterminate="True"
+                     IsVisible="{Binding IsBusy}"
+                     Height="2"
+                     MinHeight="2" />
+
+        <TextBlock Text="This feature is not available."
+                   Foreground="{DynamicResource AppTextMutedBrush}"
+                   IsVisible="{Binding !IsAvailable}" />
+
+        <Border Classes="card"
+                Padding="16"
+                IsVisible="{Binding NeedsSignIn}">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                    <TextBlock Text="Not signed in to Microsoft 365" FontWeight="SemiBold" />
+                    <TextBlock Text="Sign in once in your browser; Email, Calendar and Teams all use that session."
+                               Foreground="{DynamicResource AppTextMutedBrush}"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+                <Button Grid.Column="1"
+                        Content="Sign in"
+                        Command="{Binding SignInCommand}"
+                        VerticalAlignment="Center" />
+            </Grid>
+        </Border>
+
+        <TextBlock Text="{Binding ErrorMessage}"
+                   IsVisible="{Binding ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                   Foreground="{DynamicResource AppDangerBrush}"
+                   TextWrapping="Wrap" />
+    </StackPanel>
+</UserControl>
