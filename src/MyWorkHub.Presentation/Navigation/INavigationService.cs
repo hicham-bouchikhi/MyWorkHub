@@ -1,7 +1,8 @@
 using System.ComponentModel;
-using MyWorkHub.UI.ViewModels;
+using MyWorkHub.Core.Navigation;
+using MyWorkHub.Presentation.ViewModels;
 
-namespace MyWorkHub.UI.Navigation;
+namespace MyWorkHub.Presentation.Navigation;
 
 /// <summary>
 /// Hand-written page switching for the main content area (no ReactiveUI routing).
@@ -13,6 +14,9 @@ public interface INavigationService : INotifyPropertyChanged
     /// <summary>The view-model currently shown in the content area, or null before first navigation.</summary>
     ViewModelBase? CurrentPage { get; }
 
-    /// <summary>Resolves the page of the given type from DI and makes it the current page.</summary>
-    void NavigateTo(Type viewModelType);
+    /// <summary>
+    /// Makes the target's page current (resolving it from DI on first visit), then — when the target
+    /// names an element and the page implements <see cref="IDeepLinkTarget"/> — focuses that element.
+    /// </summary>
+    void NavigateTo(NavigationTarget target);
 }

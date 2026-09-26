@@ -1,7 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using MyWorkHub.UI.Notifications;
-using MyWorkHub.UI.ViewModels;
+using MyWorkHub.Presentation.ViewModels;
 
 namespace MyWorkHub.UI.Views;
 

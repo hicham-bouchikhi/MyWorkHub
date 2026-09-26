@@ -1,7 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <!-- Quartz core + its Microsoft DI integration (AddQuartz, the DI job factory). The jobs themselves
+         only depend on Core interfaces; the App composes the real implementations. -->
     <PackageReference Include="Quartz" Version="3.18.2" />
+    <PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.18.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />
   </ItemGroup>
 
   <ItemGroup>
@@ -13,5 +17,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>MyWorkHub.Automation.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
 
 </Project>

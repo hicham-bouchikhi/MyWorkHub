@@ -1,7 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:MyWorkHub.UI.ViewModels"
-        xmlns:nav="using:MyWorkHub.UI.Navigation"
+        xmlns:vm="using:MyWorkHub.Presentation.ViewModels"
+        xmlns:nav="using:MyWorkHub.Core.Navigation"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="720"
@@ -46,13 +46,13 @@
                         VerticalAlignment="Center"
                         ToolTip.Tip="Notifications">
                     <Panel>
-                        <!-- Monochrome bell (Segoe MDL2 "Ringer") so Foreground tints it.
-                             Tints accent and pulses while any operation runs (Classes.bellActive). -->
-                        <TextBlock Classes="bell"
-                                   Classes.bellActive="{Binding Notifications.HasActive}"
-                                   Text="&#xE7E7;"
-                                   FontFamily="Segoe MDL2 Assets"
-                                   FontSize="16" />
+                        <!-- Monochrome vector bell (a PathIcon, not an icon-font glyph, so it renders
+                             on every OS) whose Foreground the palette tints. Tints accent and pulses
+                             while any operation runs (Classes.bellActive). -->
+                        <PathIcon Classes="bell"
+                                  Classes.bellActive="{Binding Notifications.HasActive}"
+                                  Width="16" Height="16"
+                                  Data="M21,19V20H3V19L5,17V11C5,7.9 7.03,5.17 10,4.29C10,4.19 10,4.1 10,4A2,2 0 0,1 12,2A2,2 0 0,1 14,4C14,4.1 14,4.19 14,4.29C16.97,5.17 19,7.9 19,11V17L21,19M14,21A2,2 0 0,1 12,23A2,2 0 0,1 10,21" />
                         <Border IsVisible="{Binding Notifications.HasUnread}"
                                 Background="{DynamicResource AppDangerBrush}"
                                 CornerRadius="8"
@@ -178,55 +178,43 @@
                     BorderBrush="{DynamicResource AppBorderBrush}"
                     BoxShadow="2 0 8 0 #1F000000">
                 <DockPanel>
+                    <DockPanel.Resources>
+                        <DataTemplate x:Key="NavItemTemplate" x:DataType="nav:NavigationItem">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <TextBlock Text="{Binding Icon}"
+                                           FontSize="18"
+                                           Width="24"
+                                           TextAlignment="Center"
+                                           VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding Label}"
+                                           VerticalAlignment="Center"
+                                           IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).IsSidebarExpanded}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </DockPanel.Resources>
 
-                    <!-- Developer item pinned at the bottom -->
+                    <!-- Footer: docked to the bottom of the sidebar, below the burger-menu toggle
+                         (e.g. Settings, Developer) — separate from the scrollable feature list above it. -->
                     <StackPanel DockPanel.Dock="Bottom">
                         <Separator Margin="8,4" />
                         <ListBox Classes="nav"
-                                 ItemsSource="{Binding BottomNavItems}"
+                                 ItemsSource="{Binding FooterItems}"
                                  SelectedItem="{Binding SelectedItem}"
+                                 ItemTemplate="{StaticResource NavItemTemplate}"
                                  Background="Transparent"
                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                 Padding="4">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate x:DataType="nav:NavigationItem">
-                                    <StackPanel Orientation="Horizontal" Spacing="12">
-                                        <TextBlock Text="{Binding Icon}"
-                                                   FontSize="18"
-                                                   Width="24"
-                                                   TextAlignment="Center"
-                                                   VerticalAlignment="Center" />
-                                        <TextBlock Text="{Binding Label}"
-                                                   VerticalAlignment="Center"
-                                                   IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).IsSidebarExpanded}" />
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
+                                 Padding="4" />
                     </StackPanel>
 
-                    <!-- Main navigation -->
+                    <!-- Main navigation: one entry per discovered presentation module (last child
+                         fills the remaining space above the docked footer). -->
                     <ListBox Classes="nav"
                              ItemsSource="{Binding NavigationItems}"
                              SelectedItem="{Binding SelectedItem}"
+                             ItemTemplate="{StaticResource NavItemTemplate}"
                              Background="Transparent"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                             Padding="4">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate x:DataType="nav:NavigationItem">
-                                <StackPanel Orientation="Horizontal" Spacing="12">
-                                    <TextBlock Text="{Binding Icon}"
-                                               FontSize="18"
-                                               Width="24"
-                                               TextAlignment="Center"
-                                               VerticalAlignment="Center" />
-                                    <TextBlock Text="{Binding Label}"
-                                               VerticalAlignment="Center"
-                                               IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).IsSidebarExpanded}" />
-                                </StackPanel>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
+                             Padding="4" />
 
                 </DockPanel>
             </Border>

@@ -52,16 +52,17 @@
     </Style>
 
     <!-- ── Notification bell: idle vs. active ─────────────────────────────
-         A monochrome icon-font bell (so Foreground actually tints it, unlike
-         the colour emoji). Idle = normal text colour; while any operation is
+         A monochrome vector bell (PathIcon, so Foreground actually tints it,
+         unlike the colour emoji, and no OS-specific icon font is needed).
+         Idle = normal text colour; while any operation is
          running the `.bellActive` class (bound to Notifications.HasActive)
          tints it accent and pulses its opacity. Opacity is keyframe-safe;
          RenderTransform would not be (keyframes only animate simple properties like Opacity). Foreground is
          set via style, never locally, so the .bellActive setter can override. -->
-    <Style Selector="TextBlock.bell">
+    <Style Selector="PathIcon.bell">
         <Setter Property="Foreground" Value="{DynamicResource AppTextBrush}" />
     </Style>
-    <Style Selector="TextBlock.bell.bellActive">
+    <Style Selector="PathIcon.bell.bellActive">
         <Setter Property="Foreground" Value="{DynamicResource AppAccentBrush}" />
         <Style.Animations>
             <Animation Duration="0:0:1.3" IterationCount="Infinite" Easing="SineEaseInOut">
@@ -108,5 +109,19 @@
                 <BrushTransition Property="Background" Duration="0:0:0.13" />
             </Transitions>
         </Setter>
+    </Style>
+
+    <!-- ── Deep links: the row a navigation target revealed ───────────────
+         ScrollIntoViewBehavior sets this class on the item's container for a
+         moment; declared after FluentTheme so it also wins over :selected. -->
+    <Style Selector="ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.4" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="ListBoxItem.deepLinkHighlight /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource AppAccentBrush}" />
     </Style>
 </Styles>

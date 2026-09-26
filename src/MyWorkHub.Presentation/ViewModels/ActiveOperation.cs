@@ -1,13 +1,13 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
-namespace MyWorkHub.UI.ViewModels;
+namespace MyWorkHub.Presentation.ViewModels;
 
 /// <summary>
 /// One operation currently running (e.g. a PR review or an email summary), shown in the bell's
 /// "In progress" list. Carries the display label and a cancel callback so the flyout can offer a
 /// Stop button that routes back to the owner's own cancellation path. The callback is a UI-thread
-/// <see cref="Action"/>, mirroring how <see cref="NotificationEntry"/> holds its click action.
+/// <see cref="Action"/>.
 /// </summary>
 public sealed partial class ActiveOperation : ObservableObject
 {

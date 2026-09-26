@@ -1,5 +1,6 @@
 using MyWorkHub.Core.Abstractions;
-using MyWorkHub.UI.ViewModels;
+using MyWorkHub.Core.Navigation;
+using MyWorkHub.Presentation.ViewModels;
 
 namespace MyWorkHub.UI.Tests;
 
@@ -8,7 +9,7 @@ public sealed class NotificationCenterViewModelTests
     [Fact]
     public void Add_inserts_newest_first_and_increments_unread()
     {
-        var vm = new NotificationCenterViewModel();
+        var vm = new NotificationCenterViewModel(new FakeNavigationService());
 
         vm.Add("Review", "PR #1 ready", NotificationSeverity.SUCCESS);
         vm.Add("Review", "PR #2 failed", NotificationSeverity.ERROR);
@@ -23,7 +24,7 @@ public sealed class NotificationCenterViewModelTests
     [Fact]
     public void Add_trims_history_to_the_cap()
     {
-        var vm = new NotificationCenterViewModel();
+        var vm = new NotificationCenterViewModel(new FakeNavigationService());
 
         for (var i = 0; i < 250; i++)
         {
@@ -38,7 +39,7 @@ public sealed class NotificationCenterViewModelTests
     [Fact]
     public void Mark_all_read_clears_the_unread_count_and_flags_entries()
     {
-        var vm = new NotificationCenterViewModel();
+        var vm = new NotificationCenterViewModel(new FakeNavigationService());
         vm.Add("Review", "a", NotificationSeverity.INFORMATION);
         vm.Add("Review", "b", NotificationSeverity.WARNING);
 
@@ -52,7 +53,7 @@ public sealed class NotificationCenterViewModelTests
     [Fact]
     public void Clear_empties_the_history_and_unread_count()
     {
-        var vm = new NotificationCenterViewModel();
+        var vm = new NotificationCenterViewModel(new FakeNavigationService());
         vm.Add("Review", "a", NotificationSeverity.INFORMATION);
 
         vm.ClearCommand.Execute(null);
@@ -65,7 +66,7 @@ public sealed class NotificationCenterViewModelTests
     [Fact]
     public void Begin_and_end_activity_track_in_progress_operations()
     {
-        var vm = new NotificationCenterViewModel();
+        var vm = new NotificationCenterViewModel(new FakeNavigationService());
 
         Assert.False(vm.HasActive);
 
@@ -86,7 +87,7 @@ public sealed class NotificationCenterViewModelTests
     [Fact]
     public void End_activity_is_safe_for_an_operation_already_removed()
     {
-        var vm = new NotificationCenterViewModel();
+        var vm = new NotificationCenterViewModel(new FakeNavigationService());
         var op = vm.BeginActivity("Repo PR #1", () => { });
 
         vm.EndActivity(op);
@@ -98,7 +99,7 @@ public sealed class NotificationCenterViewModelTests
     [Fact]
     public void Cancelling_an_active_operation_runs_its_callback_and_marks_it_cancelling()
     {
-        var vm = new NotificationCenterViewModel();
+        var vm = new NotificationCenterViewModel(new FakeNavigationService());
         var cancelled = 0;
         var op = vm.BeginActivity("Summarising \"Hello\"", () => cancelled++);
 
@@ -113,7 +114,7 @@ public sealed class NotificationCenterViewModelTests
     [Fact]
     public void Cancelling_twice_only_runs_the_callback_once()
     {
-        var vm = new NotificationCenterViewModel();
+        var vm = new NotificationCenterViewModel(new FakeNavigationService());
         var cancelled = 0;
         var op = vm.BeginActivity("Repo PR #9", () => cancelled++);
 
@@ -124,34 +125,42 @@ public sealed class NotificationCenterViewModelTests
     }
 
     [Fact]
-    public void Activating_an_entry_runs_its_action_and_marks_it_read()
+    public void Should_navigate_to_the_target_and_mark_read_when_an_entry_is_activated()
     {
-        var vm = new NotificationCenterViewModel();
-        var activated = false;
-        vm.Add("Email summary", "ready", NotificationSeverity.SUCCESS, onActivated: () => activated = true);
-        var entry = vm.Notifications[0];
+        var navigation = new FakeNavigationService();
+        var vm = new NotificationCenterViewModel(navigation);
+        var target = new NavigationTarget(typeof(DeepLinkPageViewModel), "work-item-1234");
+        var entry = vm.Add("Mention", "You were mentioned", NotificationSeverity.INFORMATION, target);
 
+        Assert.Same(vm.Notifications[0], entry);
         Assert.True(entry.IsActionable);
+        Assert.Equal(target, entry.Target);
 
         entry.ActivateCommand.Execute(null);
 
-        Assert.True(activated);
+        Assert.Equal([target], navigation.Requests);
         Assert.True(entry.IsRead);
     }
 
     [Fact]
-    public void An_entry_without_an_action_is_not_actionable()
+    public void Should_only_mark_read_when_an_entry_without_a_target_is_activated()
     {
-        var vm = new NotificationCenterViewModel();
-        vm.Add("Review", "done", NotificationSeverity.INFORMATION);
+        var navigation = new FakeNavigationService();
+        var vm = new NotificationCenterViewModel(navigation);
+        var entry = vm.Add("Review", "done", NotificationSeverity.INFORMATION);
 
-        Assert.False(vm.Notifications[0].IsActionable);
+        Assert.False(entry.IsActionable);
+
+        entry.ActivateCommand.Execute(null);
+
+        Assert.Empty(navigation.Requests);
+        Assert.True(entry.IsRead);
     }
 
     [Fact]
     public void Unread_badge_caps_at_9_plus()
     {
-        var vm = new NotificationCenterViewModel();
+        var vm = new NotificationCenterViewModel(new FakeNavigationService());
 
         for (var i = 0; i < 12; i++)
         {

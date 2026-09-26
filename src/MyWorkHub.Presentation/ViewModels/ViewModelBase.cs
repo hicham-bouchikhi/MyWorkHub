@@ -1,6 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace MyWorkHub.UI.ViewModels;
+namespace MyWorkHub.Presentation.ViewModels;
 
 public abstract class ViewModelBase : ObservableObject
 {

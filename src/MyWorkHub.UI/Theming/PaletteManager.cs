@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml.Styling;
+using MyWorkHub.Core.Features.Settings;
 
 namespace MyWorkHub.UI.Theming;
 
@@ -12,25 +13,19 @@ namespace MyWorkHub.UI.Theming;
 /// </summary>
 public static class PaletteManager
 {
-    /// <summary>Palette key used when the requested one is missing or unknown.</summary>
-    internal const string DEFAULT_PALETTE = "GitHub";
-
     private static readonly Uri _baseUri = new("avares://MyWorkHub.UI/");
 
-    private static readonly Dictionary<string, Uri> _paletteUris =
-        new(StringComparer.OrdinalIgnoreCase)
-        {
-            ["GitHub"] = new("avares://MyWorkHub.UI/Themes/GitHub.axaml"),
-            ["VSCode"] = new("avares://MyWorkHub.UI/Themes/VSCode.axaml"),
-            ["OneDark"] = new("avares://MyWorkHub.UI/Themes/OneDark.axaml"),
-            ["TokyoNight"] = new("avares://MyWorkHub.UI/Themes/TokyoNight.axaml"),
-        };
+    // One dictionary per palette key offered by the Settings page: UI/Themes/{key}.axaml.
+    private static readonly Dictionary<string, Uri> _paletteUris = AppearanceSettings.Palettes.ToDictionary(
+        key => key,
+        key => new Uri($"avares://MyWorkHub.UI/Themes/{key}.axaml"),
+        StringComparer.OrdinalIgnoreCase);
 
     private static ResourceInclude? _current;
 
     /// <summary>
     /// Merges the palette identified by <paramref name="paletteKey"/> (falling back to
-    /// <see cref="DEFAULT_PALETTE"/> when unknown), replacing any previously applied palette.
+    /// <see cref="AppearanceSettings.Default"/>'s palette when unknown), replacing any previously applied palette.
     /// No-op when there is no running <see cref="Application"/> (e.g. unit tests).
     /// </summary>
     public static void Apply(string? paletteKey)
@@ -43,7 +38,7 @@ public static class PaletteManager
 
         if (paletteKey is null || !_paletteUris.TryGetValue(paletteKey, out var uri))
         {
-            uri = _paletteUris[DEFAULT_PALETTE];
+            uri = _paletteUris[AppearanceSettings.Default.Palette];
         }
 
         var include = new ResourceInclude(_baseUri) { Source = uri };

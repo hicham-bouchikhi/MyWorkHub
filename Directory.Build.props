@@ -32,6 +32,16 @@
   </PropertyGroup>
 
   <!--
+    The repo-root VERSION file (bumped by .github/workflows/release.yml) is the single source of the app
+    version, so local builds report the same version as releases (the Settings → About panel reads it
+    from AssemblyInformationalVersion). A -p:Version=… on the command line (as the release workflow
+    passes) is a global property and still wins.
+  -->
+  <PropertyGroup Condition="Exists('$(MSBuildThisFileDirectory)VERSION')">
+    <Version>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)VERSION').Trim())</Version>
+  </PropertyGroup>
+
+  <!--
     NuGet audit suppression — SCOPED to a single advisory, with rationale.
 
     GHSA-2m69-gcr7-jv3q affects the native SQLite bundled in

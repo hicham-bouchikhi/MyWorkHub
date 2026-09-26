@@ -1,0 +1,46 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MyWorkHub.Presentation.Features.Calendar"
+             xmlns:graph="using:MyWorkHub.UI.Features.GraphAuth"
+             x:Class="MyWorkHub.UI.Features.Calendar.CalendarView"
+             x:DataType="vm:CalendarViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,*" Margin="24">
+
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,12">
+            <StackPanel Grid.Column="0" Spacing="2">
+                <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding Subtitle}" Foreground="{DynamicResource AppTextMutedBrush}" />
+            </StackPanel>
+            <Button Grid.Column="1"
+                    Content="Refresh"
+                    Command="{Binding RefreshCommand}"
+                    IsVisible="{Binding IsAvailable}"
+                    VerticalAlignment="Center" />
+        </Grid>
+
+        <graph:GraphPageStatus Grid.Row="1" Margin="0,0,0,12" />
+
+        <ScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Disabled">
+            <ItemsControl ItemsSource="{Binding Items}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:CalendarEventRowViewModel">
+                        <Grid ColumnDefinitions="110,110,*" ColumnSpacing="12" Margin="0,6">
+                            <TextBlock Grid.Column="0"
+                                       Text="{Binding DayText}"
+                                       Foreground="{DynamicResource AppTextMutedBrush}" />
+                            <TextBlock Grid.Column="1" Text="{Binding TimeText}" />
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="{Binding Subject}" TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="{Binding Location}"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource AppTextMutedBrush}"
+                                           IsVisible="{Binding Location, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                            </StackPanel>
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

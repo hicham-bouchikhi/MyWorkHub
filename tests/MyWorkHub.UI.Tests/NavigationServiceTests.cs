@@ -1,67 +1,119 @@
-using MyWorkHub.UI.DependencyInjection;
-using MyWorkHub.UI.Navigation;
-using MyWorkHub.UI.ViewModels;
+using MyWorkHub.Core.Navigation;
+using MyWorkHub.Presentation.Navigation;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace MyWorkHub.UI.Tests;
 
 public sealed class NavigationServiceTests
 {
-    private static INavigationService CreateNavigation()
+    private static NavigationService CreateNavigation()
     {
-        var provider = new ServiceCollection().AddUi().BuildServiceProvider();
-        return provider.GetRequiredService<INavigationService>();
+        var provider = new ServiceCollection()
+            .AddTransient<PlainPageViewModel>()
+            .AddTransient<DeepLinkPageViewModel>()
+            .AddTransient<NotAPage>()
+            .BuildServiceProvider();
+        return new NavigationService(provider);
     }
 
     [Fact]
-    public void NavigateTo_resolves_the_page_and_sets_it_as_current()
+    public void Should_make_the_resolved_page_current_when_navigating()
     {
         var navigation = CreateNavigation();
 
-        navigation.NavigateTo(typeof(EmailViewModel));
+        navigation.NavigateTo(new NavigationTarget(typeof(PlainPageViewModel)));
 
-        Assert.IsType<EmailViewModel>(navigation.CurrentPage);
+        Assert.IsType<PlainPageViewModel>(navigation.CurrentPage);
     }
 
     [Fact]
-    public void NavigateTo_raises_property_changed_for_CurrentPage()
+    public void Should_raise_property_changed_for_current_page_when_navigating()
     {
         var navigation = CreateNavigation();
         var raised = false;
-        navigation.PropertyChanged += (_, e) =>
-        {
-            if (e.PropertyName == nameof(INavigationService.CurrentPage))
-            {
-                raised = true;
-            }
-        };
+        navigation.PropertyChanged += (_, e) => raised |= e.PropertyName == nameof(INavigationService.CurrentPage);
 
-        navigation.NavigateTo(typeof(TodoViewModel));
+        navigation.NavigateTo(new NavigationTarget(typeof(PlainPageViewModel)));
 
         Assert.True(raised);
     }
 
     [Fact]
-    public void NavigateTo_reuses_the_same_cached_page_instance_on_return()
+    public void Should_reuse_the_cached_page_instance_when_returning_to_a_page()
     {
-        // Page state (e.g. an in-progress PR review) must survive navigating away and back,
-        // so the navigation service caches one instance per page type.
+        // Page state must survive navigating away and back, so one instance is cached per page type.
         var navigation = CreateNavigation();
 
-        navigation.NavigateTo(typeof(SettingsViewModel));
+        navigation.NavigateTo(new NavigationTarget(typeof(PlainPageViewModel)));
         var first = navigation.CurrentPage;
-        navigation.NavigateTo(typeof(EmailViewModel));
-        navigation.NavigateTo(typeof(SettingsViewModel));
-        var second = navigation.CurrentPage;
+        navigation.NavigateTo(new NavigationTarget(typeof(DeepLinkPageViewModel)));
+        navigation.NavigateTo(new NavigationTarget(typeof(PlainPageViewModel)));
 
-        Assert.Same(first, second);
+        Assert.Same(first, navigation.CurrentPage);
     }
 
     [Fact]
-    public void NavigateTo_null_type_throws()
+    public void Should_focus_the_element_when_the_target_names_one_and_the_page_is_a_deep_link_target()
+    {
+        var navigation = CreateNavigation();
+
+        navigation.NavigateTo(new NavigationTarget(typeof(DeepLinkPageViewModel), "work-item-1234"));
+
+        var page = Assert.IsType<DeepLinkPageViewModel>(navigation.CurrentPage);
+        Assert.Equal(["work-item-1234"], page.FocusedElementIds);
+    }
+
+    [Fact]
+    public void Should_focus_on_the_cached_page_when_deep_linking_to_an_already_visited_page()
+    {
+        var navigation = CreateNavigation();
+        navigation.NavigateTo(new NavigationTarget(typeof(DeepLinkPageViewModel)));
+        var page = Assert.IsType<DeepLinkPageViewModel>(navigation.CurrentPage);
+
+        navigation.NavigateTo(new NavigationTarget(typeof(DeepLinkPageViewModel), "email-7"));
+
+        Assert.Same(page, navigation.CurrentPage);
+        Assert.Equal(["email-7"], page.FocusedElementIds);
+    }
+
+    [Fact]
+    public void Should_not_focus_anything_when_the_target_has_no_element_id()
+    {
+        var navigation = CreateNavigation();
+
+        navigation.NavigateTo(new NavigationTarget(typeof(DeepLinkPageViewModel)));
+
+        var page = Assert.IsType<DeepLinkPageViewModel>(navigation.CurrentPage);
+        Assert.Empty(page.FocusedElementIds);
+    }
+
+    [Fact]
+    public void Should_still_navigate_when_an_element_id_targets_a_page_without_deep_link_support()
+    {
+        var navigation = CreateNavigation();
+
+        navigation.NavigateTo(new NavigationTarget(typeof(PlainPageViewModel), "ignored"));
+
+        Assert.IsType<PlainPageViewModel>(navigation.CurrentPage);
+    }
+
+    [Fact]
+    public void Should_throw_when_the_target_type_is_not_a_view_model()
+    {
+        var navigation = CreateNavigation();
+
+        var ex = Assert.Throws<InvalidOperationException>(() => navigation.NavigateTo(new NavigationTarget(typeof(NotAPage))));
+
+        Assert.Contains(typeof(NotAPage).FullName!, ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Should_throw_when_the_target_is_null()
     {
         var navigation = CreateNavigation();
 
         Assert.Throws<ArgumentNullException>(() => navigation.NavigateTo(null!));
     }
+
+    internal sealed class NotAPage;
 }

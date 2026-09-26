@@ -1,19 +1,29 @@
 using System.Collections.ObjectModel;
 using MyWorkHub.Core.Abstractions;
+using MyWorkHub.Core.Navigation;
+using MyWorkHub.Presentation.Navigation;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
-namespace MyWorkHub.UI.ViewModels;
+namespace MyWorkHub.Presentation.ViewModels;
 
 /// <summary>
 /// Session-only history of notifications shown in the top-bar bell flyout. Every
-/// <see cref="ToastNotificationService.Notify"/> also records here (newest first), so a
+/// <see cref="INotificationService.Notify"/> also records here (newest first), so a
 /// toast that has auto-dismissed can still be reviewed. Held as a singleton and shared
 /// between the toast service (writer) and the shell view model (reader).
 /// </summary>
 public sealed partial class NotificationCenterViewModel : ViewModelBase
 {
     private const int MAX_ENTRIES = 200;
+
+    private readonly INavigationService _navigation;
+
+    public NotificationCenterViewModel(INavigationService navigation)
+    {
+        ArgumentNullException.ThrowIfNull(navigation);
+        _navigation = navigation;
+    }
 
     /// <summary>History, newest first.</summary>
     public ObservableCollection<NotificationEntry> Notifications { get; } = [];
@@ -58,13 +68,14 @@ public sealed partial class NotificationCenterViewModel : ViewModelBase
     }
 
     /// <summary>
-    /// Records a notification at the top of the history. Assumes the UI thread — the toast
-    /// service marshals via the dispatcher before calling this, so it stays dispatcher-free
-    /// and directly unit-testable.
+    /// Records a notification at the top of the history and returns it (so the toast can share the
+    /// entry's activation path). Assumes the UI thread — the toast service marshals via the
+    /// dispatcher before calling this, so it stays dispatcher-free and directly unit-testable.
     /// </summary>
-    public void Add(string title, string message, NotificationSeverity severity, Action? onActivated = null)
+    public NotificationEntry Add(string title, string message, NotificationSeverity severity, NavigationTarget? target = null)
     {
-        Notifications.Insert(0, new NotificationEntry(title, message, severity, DateTime.Now, onActivated));
+        var entry = new NotificationEntry(title, message, severity, DateTime.Now, _navigation, target);
+        Notifications.Insert(0, entry);
 
         while (Notifications.Count > MAX_ENTRIES)
         {
@@ -73,6 +84,7 @@ public sealed partial class NotificationCenterViewModel : ViewModelBase
 
         UnreadCount++;
         OnPropertyChanged(nameof(HasAny));
+        return entry;
     }
 
     [RelayCommand]

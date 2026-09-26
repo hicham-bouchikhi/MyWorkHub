@@ -18,10 +18,10 @@ internal sealed class Program
         if (singleInstance.IsAlreadyRunning)
             return;
 
+        // Also migrates the database, before startup validation constructs the pages.
         var services = CompositionRoot.Build();
         try
         {
-            CompositionRoot.InitializeDatabase(services);
             BuildAvaloniaApp(services, singleInstance).StartWithClassicDesktopLifetime(args);
         }
         finally

@@ -1,0 +1,141 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MyWorkHub.Presentation.Features.WorkItems"
+             xmlns:behaviors="using:MyWorkHub.UI.Behaviors"
+             xmlns:azdo="using:MyWorkHub.UI.Features.AzureDevOps"
+             x:Class="MyWorkHub.UI.Features.WorkItems.WorkItemsView"
+             x:Name="Root"
+             x:DataType="vm:WorkItemsViewModel">
+
+    <UserControl.Styles>
+        <Style Selector="TextBlock.unread">
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="TextBlock.sectionHeader">
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" Margin="24">
+
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,12">
+            <TextBlock Grid.Column="0"
+                       Text="{Binding Title}"
+                       FontSize="24"
+                       FontWeight="SemiBold" />
+            <Button Grid.Column="1"
+                    Content="Refresh"
+                    Command="{Binding RefreshCommand}"
+                    IsVisible="{Binding IsAvailable}"
+                    VerticalAlignment="Center" />
+        </Grid>
+
+        <azdo:AzureDevOpsPageStatus Grid.Row="1" Margin="0,0,0,12" />
+
+        <!-- Mentions (best-effort, preview API): the whole section hides when there are none or they
+             could not be loaded. Deep links reach a row here via "mention:{commentId}". -->
+        <StackPanel Grid.Row="2" Margin="0,0,0,16" IsVisible="{Binding Mentions.Count}">
+            <TextBlock Classes="sectionHeader" Text="Mentions" />
+            <ListBox ItemsSource="{Binding Mentions}"
+                     SelectedItem="{Binding SelectedMention}"
+                     behaviors:ScrollIntoViewBehavior.Item="{Binding HighlightedMention}"
+                     MaxHeight="240"
+                     Background="Transparent"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:WorkItemMentionRowViewModel">
+                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                            <TextBlock Grid.Column="0"
+                                       Text="●"
+                                       FontSize="10"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource AppAccentBrush}"
+                                       IsVisible="{Binding IsUnread}"
+                                       ToolTip.Tip="Not opened yet" />
+                            <StackPanel Grid.Column="1" Spacing="2">
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding Author}"
+                                               Classes.unread="{Binding IsUnread}"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding CreatedAtText}"
+                                               FontSize="12"
+                                               Foreground="{DynamicResource AppTextMutedBrush}" />
+                                </Grid>
+                                <TextBlock Text="{Binding WorkItemText}"
+                                           FontSize="12"
+                                           TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="{Binding Snippet}"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource AppTextMutedBrush}"
+                                           TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                            <Button Grid.Column="2"
+                                    Content="Open"
+                                    VerticalAlignment="Center"
+                                    ToolTip.Tip="Open the work item in Azure DevOps"
+                                    Command="{Binding #Root.((vm:WorkItemsViewModel)DataContext).OpenMentionCommand}"
+                                    CommandParameter="{Binding}" />
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </StackPanel>
+
+        <TextBlock Grid.Row="3" Classes="sectionHeader" Text="Assigned to me" IsVisible="{Binding Items.Count}" />
+
+        <!-- Real ListBoxes (selection + ScrollIntoView), not bare ItemsControls, so deep links can land
+             on a row ("item:{workItemId}"). They scroll themselves: do not wrap them in a ScrollViewer. -->
+        <ListBox Grid.Row="4"
+                 ItemsSource="{Binding Items}"
+                 SelectedItem="{Binding SelectedItem}"
+                 behaviors:ScrollIntoViewBehavior.Item="{Binding HighlightedItem}"
+                 Background="Transparent"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+            <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:WorkItemRowViewModel">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <StackPanel Grid.Column="0" Spacing="2">
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
+                                <TextBlock Grid.Column="0"
+                                           Text="{Binding IdText}"
+                                           Foreground="{DynamicResource AppTextMutedBrush}" />
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding Title}"
+                                           FontWeight="SemiBold"
+                                           TextTrimming="CharacterEllipsis" />
+                            </Grid>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="{Binding Type}" FontSize="12" />
+                                <TextBlock Text="{Binding State}"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource AppAccentBrush}" />
+                                <TextBlock Text="{Binding PriorityText}"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource AppTextMutedBrush}" />
+                                <TextBlock Text="{Binding EffortText}"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource AppTextMutedBrush}" />
+                                <TextBlock Text="{Binding DueText}"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource AppTextMutedBrush}" />
+                                <TextBlock Text="{Binding Project}"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource AppTextMutedBrush}" />
+                            </StackPanel>
+                        </StackPanel>
+                        <Button Grid.Column="1"
+                                Content="Open"
+                                VerticalAlignment="Center"
+                                ToolTip.Tip="Open in Azure DevOps"
+                                Command="{Binding #Root.((vm:WorkItemsViewModel)DataContext).OpenWorkItemCommand}"
+                                CommandParameter="{Binding}" />
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </Grid>
+</UserControl>

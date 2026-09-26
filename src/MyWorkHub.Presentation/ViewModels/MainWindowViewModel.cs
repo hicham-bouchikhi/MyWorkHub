@@ -1,9 +1,10 @@
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using MyWorkHub.UI.Navigation;
+using MyWorkHub.Core.Navigation;
+using MyWorkHub.Presentation.Navigation;
 
-namespace MyWorkHub.UI.ViewModels;
+namespace MyWorkHub.Presentation.ViewModels;
 
 public sealed partial class MainWindowViewModel : ViewModelBase
 {
@@ -17,31 +18,31 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     private NavigationItem? _selectedItem;
 
-    public MainWindowViewModel(INavigationService navigation, NotificationCenterViewModel notifications)
+    /// <param name="navigation">Page switching for the content area.</param>
+    /// <param name="notifications">The shared bell-flyout history.</param>
+    /// <param name="navigationItems">The sidebar, built from every discovered presentation module's
+    /// menu entry (already sorted) — the shell holds no hardcoded page list. Split into
+    /// <see cref="NavigationItems"/> (the scrollable feature list) and <see cref="FooterItems"/> (docked
+    /// to the bottom of the sidebar, below the burger-menu toggle) by <see cref="NavigationItem.IsFooter"/>.</param>
+    public MainWindowViewModel(
+        INavigationService navigation,
+        NotificationCenterViewModel notifications,
+        IReadOnlyList<NavigationItem> navigationItems)
     {
         ArgumentNullException.ThrowIfNull(navigation);
         ArgumentNullException.ThrowIfNull(notifications);
+        ArgumentNullException.ThrowIfNull(navigationItems);
+
         Navigation = navigation;
         Notifications = notifications;
+        NavigationItems = [.. navigationItems.Where(i => !i.IsFooter)];
+        FooterItems = [.. navigationItems.Where(i => i.IsFooter)];
         Navigation.PropertyChanged += OnNavigationPropertyChanged;
 
-        NavigationItems = new[]
-        {
-            new NavigationItem("Dashboard", "\U0001F3E0", typeof(DashboardViewModel)),
-            new NavigationItem("Email", "✉", typeof(EmailViewModel)),
-            new NavigationItem("Pull Requests", "\U0001F500", typeof(PullRequestsViewModel)),
-            new NavigationItem("Work Items", "\U0001F4CB", typeof(WorkItemsViewModel)),
-            new NavigationItem("Teams", "\U0001F4AC", typeof(TeamsViewModel)),
-            new NavigationItem("Todo", "✅", typeof(TodoViewModel)),
-            new NavigationItem("Remote Work", "\U0001F3E1", typeof(RemoteWorkViewModel)),
-            new NavigationItem("Automations", "⚙", typeof(AutomationsViewModel)),
-            new NavigationItem("Settings", "\U0001F527", typeof(SettingsViewModel)),
-        };
-
-        BottomNavItems = new[] { new NavigationItem("Developer", "🛠", typeof(DevViewModel)) };
-
-        // Land on the Dashboard; setting SelectedItem triggers the initial navigation.
-        SelectedItem = NavigationItems[0];
+        // Land on the first entry (if any); setting SelectedItem triggers the initial navigation.
+        SelectedItem = NavigationItems.Count > 0 ? NavigationItems[0]
+            : FooterItems.Count > 0 ? FooterItems[0]
+            : null;
     }
 
     /// <summary>The active page, bound to the content area.</summary>
@@ -50,11 +51,12 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     /// <summary>Notification history + unread count backing the top-bar bell.</summary>
     public NotificationCenterViewModel Notifications { get; }
 
-    /// <summary>Main sidebar entries.</summary>
+    /// <summary>Scrollable sidebar entries, one per feature module that contributes a non-footer menu entry.</summary>
     public IReadOnlyList<NavigationItem> NavigationItems { get; }
 
-    /// <summary>Items pinned at the bottom of the sidebar (dev tools, etc.).</summary>
-    public IReadOnlyList<NavigationItem> BottomNavItems { get; }
+    /// <summary>Entries docked to the bottom of the sidebar (e.g. Settings, Developer), below the
+    /// burger-menu toggle and separated from the scrollable feature list above them.</summary>
+    public IReadOnlyList<NavigationItem> FooterItems { get; }
 
     /// <summary>Current sidebar width, driven by <see cref="IsSidebarExpanded"/>.</summary>
     public double SidebarWidth => IsSidebarExpanded ? EXPANDED_SIDEBAR_WIDTH : COLLAPSED_SIDEBAR_WIDTH;
@@ -67,7 +69,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         // Skip if the content area already shows this page (e.g. synced from NavigationService).
         if (value is not null && Navigation.CurrentPage?.GetType() != value.ViewModelType)
         {
-            Navigation.NavigateTo(value.ViewModelType);
+            Navigation.NavigateTo(new NavigationTarget(value.ViewModelType));
         }
     }
 
@@ -80,8 +82,10 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         if (pageType is null)
             return;
 
+        // Keep the sidebar highlight in sync when navigation happens elsewhere (e.g. a notification).
+        // A footer entry (Settings, Developer) can be the navigation target too, so both lists are searched.
         var match = NavigationItems.FirstOrDefault(i => i.ViewModelType == pageType)
-                 ?? BottomNavItems.FirstOrDefault(i => i.ViewModelType == pageType);
+                    ?? FooterItems.FirstOrDefault(i => i.ViewModelType == pageType);
         if (match is not null && !ReferenceEquals(match, SelectedItem))
             SelectedItem = match;
     }

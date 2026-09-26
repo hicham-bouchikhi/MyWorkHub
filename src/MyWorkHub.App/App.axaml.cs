@@ -2,9 +2,9 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using Avalonia.Styling;
+using MyWorkHub.Core.Abstractions;
 using MyWorkHub.Core.Configuration;
-using MyWorkHub.UI.Theming;
+using MyWorkHub.UI;
 using MyWorkHub.UI.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -61,15 +61,14 @@ public partial class App : Application
             var uiOptions = _services.GetRequiredService<IOptions<UiOptions>>().Value;
             _minimizeToTrayOnClose = uiOptions.MinimizeToTrayOnClose;
 
-            RequestedThemeVariant = uiOptions.Theme switch
-            {
-                "Light" => ThemeVariant.Light,
-                "Dark"  => ThemeVariant.Dark,
-                _       => ThemeVariant.Default
-            };
+            // The same runtime seam the Settings page uses. The palette is merged before the UI is built so its
+            // App* tokens resolve.
+            var theme = _services.GetRequiredService<IThemeService>();
+            theme.ApplyTheme(uiOptions.Theme);
+            theme.ApplyPalette(uiOptions.Palette);
 
-            // Merge the configured colour palette before building the UI so its App* tokens resolve.
-            PaletteManager.Apply(uiOptions.Palette);
+            // Page views are resolved through the module-built registry, not a naming convention.
+            DataTemplates.Add(_services.GetRequiredService<ViewLocator>());
 
             _mainWindow = _services.GetRequiredService<MainWindow>();
             _mainWindow.Closing += OnMainWindowClosing;
@@ -85,7 +84,7 @@ public partial class App : Application
                 }
             };
 
-            // Quartz starts in the background; no jobs are scheduled yet (Phase 10/11).
+            // Quartz starts in the background and runs the scheduled automations (see AddAutomations).
             _ = StartSchedulerAsync();
         }
 

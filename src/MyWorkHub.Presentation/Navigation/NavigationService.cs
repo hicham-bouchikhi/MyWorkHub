@@ -1,8 +1,9 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using MyWorkHub.UI.ViewModels;
+using MyWorkHub.Core.Navigation;
+using MyWorkHub.Presentation.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace MyWorkHub.UI.Navigation;
+namespace MyWorkHub.Presentation.Navigation;
 
 /// <inheritdoc cref="INavigationService" />
 public sealed partial class NavigationService : ObservableObject, INavigationService
@@ -10,9 +11,8 @@ public sealed partial class NavigationService : ObservableObject, INavigationSer
     private readonly IServiceProvider _services;
 
     // One instance per page type, kept for the app's lifetime. Navigating away and back
-    // returns the SAME view model, so page state survives — in particular an in-progress
-    // PR review (its spinner, activity log and cancellation) keeps running and stays visible,
-    // and pages don't re-fetch on every tab switch.
+    // returns the SAME view model, so page state (in-progress work, scroll position, loaded
+    // data) survives and pages don't re-fetch on every tab switch.
     private readonly Dictionary<Type, ViewModelBase> _pages = [];
 
     [ObservableProperty]
@@ -24,16 +24,24 @@ public sealed partial class NavigationService : ObservableObject, INavigationSer
         _services = services;
     }
 
-    public void NavigateTo(Type viewModelType)
+    public void NavigateTo(NavigationTarget target)
     {
-        ArgumentNullException.ThrowIfNull(viewModelType);
+        ArgumentNullException.ThrowIfNull(target);
 
-        if (!_pages.TryGetValue(viewModelType, out var page))
+        var pageType = target.ViewModelType;
+        if (!_pages.TryGetValue(pageType, out var page))
         {
-            page = (ViewModelBase)_services.GetRequiredService(viewModelType);
-            _pages[viewModelType] = page;
+            page = _services.GetRequiredService(pageType) as ViewModelBase
+                ?? throw new InvalidOperationException(
+                    $"Cannot navigate to '{pageType.FullName}': it does not derive from {nameof(ViewModelBase)}.");
+            _pages[pageType] = page;
         }
 
         CurrentPage = page;
+
+        if (target.ElementId is { } elementId && page is IDeepLinkTarget deepLink)
+        {
+            deepLink.FocusElement(elementId);
+        }
     }
 }

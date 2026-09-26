@@ -1,0 +1,158 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MyWorkHub.Presentation.Features.Automations"
+             x:Class="MyWorkHub.UI.Features.Automations.AutomationsView"
+             x:Name="Root"
+             x:DataType="vm:AutomationsViewModel">
+
+    <UserControl.Styles>
+        <Style Selector="TextBlock.muted">
+            <Setter Property="Foreground" Value="{DynamicResource AppTextMutedBrush}" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <Style Selector="TextBlock.section">
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,16,0,8" />
+        </Style>
+        <Style Selector="TextBlock.success">
+            <Setter Property="Foreground" Value="{DynamicResource AppSuccessBrush}" />
+        </Style>
+        <Style Selector="TextBlock.warning">
+            <Setter Property="Foreground" Value="{DynamicResource AppWarningBrush}" />
+        </Style>
+        <Style Selector="TextBlock.danger">
+            <Setter Property="Foreground" Value="{DynamicResource AppDangerBrush}" />
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="24" Spacing="4">
+
+            <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,8">
+                <TextBlock Grid.Column="0" Text="{Binding Title}" FontSize="24" FontWeight="SemiBold" />
+                <Button Grid.Column="1" Content="Refresh" Command="{Binding RefreshCommand}" />
+            </Grid>
+
+            <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" Height="2" MinHeight="2" />
+
+            <TextBlock Text="{Binding ErrorMessage}"
+                       IsVisible="{Binding ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                       Foreground="{DynamicResource AppDangerBrush}"
+                       TextWrapping="Wrap" />
+
+            <TextBlock Classes="muted"
+                       Text="Automations are not available."
+                       IsVisible="{Binding !IsAvailable}" />
+
+            <!-- Automations: schedule + Run now. -->
+            <ItemsControl ItemsSource="{Binding Automations}" IsVisible="{Binding IsAvailable}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:AutomationRowViewModel">
+                        <Border Classes="card" Padding="16" Margin="0,0,0,8">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                <StackPanel Grid.Column="0" Spacing="2">
+                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                    <TextBlock Classes="muted" Text="{Binding Description}" />
+                                    <TextBlock Classes="muted" Text="{Binding ScheduleText}" />
+                                    <TextBlock Classes="muted" Text="{Binding NextRunText}"
+                                               IsVisible="{Binding NextRunText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                                    <TextBlock Classes="muted" Text="{Binding RunNowStatus}"
+                                               IsVisible="{Binding RunNowStatus, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                                </StackPanel>
+                                <Button Grid.Column="1"
+                                        Content="Run now"
+                                        VerticalAlignment="Top"
+                                        Command="{Binding #Root.((vm:AutomationsViewModel)DataContext).RunNowCommand}"
+                                        CommandParameter="{Binding}" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- This month's remote-work plan (the source the sync copies out). -->
+            <StackPanel IsVisible="{Binding CanEditPlan}" Spacing="6">
+                <TextBlock Classes="section" Text="{Binding PlanMonthLabel, StringFormat='Remote-work days — {0}'}" />
+                <TextBlock Classes="muted" Text="Day numbers separated by commas or spaces, e.g. 2, 5, 9. The Remote-work sync copies them to Outlook, PeopleNet and mwork." />
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <TextBox Grid.Column="0" Text="{Binding PlanDaysText}" PlaceholderText="e.g. 2, 5, 9">
+                        <TextBox.KeyBindings>
+                            <KeyBinding Gesture="Enter" Command="{Binding SavePlanCommand}" />
+                        </TextBox.KeyBindings>
+                    </TextBox>
+                    <Button Grid.Column="1" Content="Save" Command="{Binding SavePlanCommand}" VerticalAlignment="Stretch" />
+                </Grid>
+                <TextBlock Classes="muted" Text="{Binding PlanMessage}"
+                           IsVisible="{Binding PlanMessage, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            </StackPanel>
+
+            <!-- Site logins, stored encrypted on this machine. -->
+            <StackPanel IsVisible="{Binding CanManageLogins}" Spacing="6">
+                <TextBlock Classes="section" Text="Site logins" />
+                <TextBlock Classes="muted" Text="Used by the browser automations. Stored encrypted on this machine, never in appsettings.json." />
+                <ItemsControl ItemsSource="{Binding SiteLogins}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:SiteLoginRowViewModel">
+                            <Grid ColumnDefinitions="160,*,*,Auto,Auto" ColumnSpacing="8" Margin="0,0,0,6">
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Name}" />
+                                    <TextBlock Classes="success" Text="Login saved" FontSize="11" IsVisible="{Binding HasSavedLogin}" />
+                                    <TextBlock Classes="muted" Text="No login saved" FontSize="11" IsVisible="{Binding !HasSavedLogin}" />
+                                </StackPanel>
+                                <TextBox Grid.Column="1" PlaceholderText="User name" Text="{Binding UserName}" />
+                                <TextBox Grid.Column="2" PlaceholderText="Password" PasswordChar="•" Text="{Binding Password}" />
+                                <Button Grid.Column="3"
+                                        Content="Save"
+                                        IsEnabled="{Binding CanSave}"
+                                        Command="{Binding #Root.((vm:AutomationsViewModel)DataContext).SaveLoginCommand}"
+                                        CommandParameter="{Binding}" />
+                                <Button Grid.Column="4"
+                                        Content="Remove"
+                                        IsEnabled="{Binding HasSavedLogin}"
+                                        Command="{Binding #Root.((vm:AutomationsViewModel)DataContext).ClearLoginCommand}"
+                                        CommandParameter="{Binding}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <!-- Recent runs, each with its per-step outcome. -->
+            <StackPanel IsVisible="{Binding HasHistory}" Spacing="6">
+                <TextBlock Classes="section" Text="Recent runs" />
+                <TextBlock Classes="muted" Text="No runs yet." IsVisible="{Binding !Runs.Count}" />
+                <ItemsControl ItemsSource="{Binding Runs}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:AutomationRunRowViewModel">
+                            <Border Classes="card" Padding="12" Margin="0,0,0,6">
+                                <StackPanel Spacing="4">
+                                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+                                        <TextBlock Grid.Column="0" Text="{Binding Name}" FontWeight="SemiBold" />
+                                        <TextBlock Grid.Column="1" Classes="muted" Text="{Binding StartedText}" />
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding StatusText}"
+                                                   Classes.success="{Binding IsSuccess}"
+                                                   Classes.warning="{Binding IsPartial}"
+                                                   Classes.danger="{Binding IsFailed}" />
+                                    </Grid>
+                                    <ItemsControl ItemsSource="{Binding Steps}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:AutomationStepRowViewModel">
+                                                <Grid ColumnDefinitions="20,160,*" ColumnSpacing="6">
+                                                    <TextBlock Grid.Column="0" Text="{Binding Glyph}" Classes.danger="{Binding IsFailed}" />
+                                                    <TextBlock Grid.Column="1" Text="{Binding Name}" />
+                                                    <TextBlock Grid.Column="2" Classes="muted" Text="{Binding Message}" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

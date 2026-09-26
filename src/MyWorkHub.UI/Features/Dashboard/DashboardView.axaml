@@ -1,0 +1,14 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MyWorkHub.Presentation.Features.Dashboard"
+             x:Class="MyWorkHub.UI.Features.Dashboard.DashboardView"
+             x:DataType="vm:DashboardViewModel">
+
+    <StackPanel Margin="24" Spacing="8">
+        <TextBlock Text="{Binding Title}"
+                   FontSize="24"
+                   FontWeight="SemiBold" />
+        <TextBlock Text="Pick a section from the sidebar."
+                   Foreground="{DynamicResource AppTextMutedBrush}" />
+    </StackPanel>
+</UserControl>

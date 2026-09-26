@@ -1,13 +1,11 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="MyWorkHub.App.App"
-             xmlns:ui="using:MyWorkHub.UI"
              RequestedThemeVariant="Default">
              <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
-    <Application.DataTemplates>
-        <ui:ViewLocator/>
-    </Application.DataTemplates>
+    <!-- The ViewLocator data template is added from code (App.axaml.cs) because it is built by DI
+         from the view registry merged across all discovered IViewModule implementations. -->
 
     <!-- Default palette merged statically so the App* tokens always resolve (incl. the designer);
          PaletteManager swaps in the user's chosen palette at startup and at runtime. -->
