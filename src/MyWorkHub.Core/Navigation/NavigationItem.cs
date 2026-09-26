@@ -9,7 +9,10 @@ namespace MyWorkHub.Core.Navigation;
 /// <param name="ViewModelType">The page view-model type displayed when this item is selected.</param>
 /// <param name="Order">Sort key within the sidebar (ascending; ties broken by label). The shell lands
 /// on the first entry at startup.</param>
-public sealed record NavigationItem(string Label, string Icon, Type ViewModelType, int Order = 0)
+/// <param name="IsFooter">Docks this entry to the bottom of the sidebar, below the burger-menu toggle,
+/// separated from the scrollable feature list above it (e.g. Settings, Developer) instead of appearing
+/// inline with feature pages.</param>
+public sealed record NavigationItem(string Label, string Icon, Type ViewModelType, int Order = 0, bool IsFooter = false)
 {
     public string Label { get; init; } = !string.IsNullOrWhiteSpace(Label)
         ? Label

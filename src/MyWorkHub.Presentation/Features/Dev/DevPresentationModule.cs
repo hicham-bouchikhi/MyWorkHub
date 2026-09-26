@@ -11,7 +11,7 @@ public sealed class DevPresentationModule : IPresentationModule
     private const int MENU_ORDER = int.MaxValue;
 
     public NavigationItem? MenuEntry { get; } =
-        new("Developer", "🛠", typeof(DevViewModel), MENU_ORDER);
+        new("Developer", "🛠", typeof(DevViewModel), MENU_ORDER, IsFooter: true);
 
     public void RegisterServices(IServiceCollection services)
     {

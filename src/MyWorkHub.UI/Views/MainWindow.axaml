@@ -178,29 +178,43 @@
                     BorderBrush="{DynamicResource AppBorderBrush}"
                     BoxShadow="2 0 8 0 #1F000000">
                 <DockPanel>
+                    <DockPanel.Resources>
+                        <DataTemplate x:Key="NavItemTemplate" x:DataType="nav:NavigationItem">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <TextBlock Text="{Binding Icon}"
+                                           FontSize="18"
+                                           Width="24"
+                                           TextAlignment="Center"
+                                           VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding Label}"
+                                           VerticalAlignment="Center"
+                                           IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).IsSidebarExpanded}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </DockPanel.Resources>
 
-                    <!-- Main navigation: one entry per discovered presentation module. -->
+                    <!-- Footer: docked to the bottom of the sidebar, below the burger-menu toggle
+                         (e.g. Settings, Developer) — separate from the scrollable feature list above it. -->
+                    <StackPanel DockPanel.Dock="Bottom">
+                        <Separator Margin="8,4" />
+                        <ListBox Classes="nav"
+                                 ItemsSource="{Binding FooterItems}"
+                                 SelectedItem="{Binding SelectedItem}"
+                                 ItemTemplate="{StaticResource NavItemTemplate}"
+                                 Background="Transparent"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 Padding="4" />
+                    </StackPanel>
+
+                    <!-- Main navigation: one entry per discovered presentation module (last child
+                         fills the remaining space above the docked footer). -->
                     <ListBox Classes="nav"
                              ItemsSource="{Binding NavigationItems}"
                              SelectedItem="{Binding SelectedItem}"
+                             ItemTemplate="{StaticResource NavItemTemplate}"
                              Background="Transparent"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                             Padding="4">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate x:DataType="nav:NavigationItem">
-                                <StackPanel Orientation="Horizontal" Spacing="12">
-                                    <TextBlock Text="{Binding Icon}"
-                                               FontSize="18"
-                                               Width="24"
-                                               TextAlignment="Center"
-                                               VerticalAlignment="Center" />
-                                    <TextBlock Text="{Binding Label}"
-                                               VerticalAlignment="Center"
-                                               IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).IsSidebarExpanded}" />
-                                </StackPanel>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
+                             Padding="4" />
 
                 </DockPanel>
             </Border>

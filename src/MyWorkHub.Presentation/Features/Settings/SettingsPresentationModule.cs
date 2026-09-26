@@ -11,7 +11,7 @@ public sealed class SettingsPresentationModule : IPresentationModule
     private const int MENU_ORDER = int.MaxValue - 1;
 
     public NavigationItem? MenuEntry { get; } =
-        new("Settings", "⚙", typeof(SettingsViewModel), MENU_ORDER);
+        new("Settings", "⚙", typeof(SettingsViewModel), MENU_ORDER, IsFooter: true);
 
     public void RegisterServices(IServiceCollection services)
     {

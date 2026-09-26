@@ -21,7 +21,9 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     /// <param name="navigation">Page switching for the content area.</param>
     /// <param name="notifications">The shared bell-flyout history.</param>
     /// <param name="navigationItems">The sidebar, built from every discovered presentation module's
-    /// menu entry (already sorted) — the shell holds no hardcoded page list.</param>
+    /// menu entry (already sorted) — the shell holds no hardcoded page list. Split into
+    /// <see cref="NavigationItems"/> (the scrollable feature list) and <see cref="FooterItems"/> (docked
+    /// to the bottom of the sidebar, below the burger-menu toggle) by <see cref="NavigationItem.IsFooter"/>.</param>
     public MainWindowViewModel(
         INavigationService navigation,
         NotificationCenterViewModel notifications,
@@ -33,11 +35,14 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 
         Navigation = navigation;
         Notifications = notifications;
-        NavigationItems = navigationItems;
+        NavigationItems = [.. navigationItems.Where(i => !i.IsFooter)];
+        FooterItems = [.. navigationItems.Where(i => i.IsFooter)];
         Navigation.PropertyChanged += OnNavigationPropertyChanged;
 
         // Land on the first entry (if any); setting SelectedItem triggers the initial navigation.
-        SelectedItem = NavigationItems.Count > 0 ? NavigationItems[0] : null;
+        SelectedItem = NavigationItems.Count > 0 ? NavigationItems[0]
+            : FooterItems.Count > 0 ? FooterItems[0]
+            : null;
     }
 
     /// <summary>The active page, bound to the content area.</summary>
@@ -46,8 +51,12 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     /// <summary>Notification history + unread count backing the top-bar bell.</summary>
     public NotificationCenterViewModel Notifications { get; }
 
-    /// <summary>Sidebar entries, one per feature module that contributes a menu entry.</summary>
+    /// <summary>Scrollable sidebar entries, one per feature module that contributes a non-footer menu entry.</summary>
     public IReadOnlyList<NavigationItem> NavigationItems { get; }
+
+    /// <summary>Entries docked to the bottom of the sidebar (e.g. Settings, Developer), below the
+    /// burger-menu toggle and separated from the scrollable feature list above them.</summary>
+    public IReadOnlyList<NavigationItem> FooterItems { get; }
 
     /// <summary>Current sidebar width, driven by <see cref="IsSidebarExpanded"/>.</summary>
     public double SidebarWidth => IsSidebarExpanded ? EXPANDED_SIDEBAR_WIDTH : COLLAPSED_SIDEBAR_WIDTH;
@@ -74,7 +83,9 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             return;
 
         // Keep the sidebar highlight in sync when navigation happens elsewhere (e.g. a notification).
-        var match = NavigationItems.FirstOrDefault(i => i.ViewModelType == pageType);
+        // A footer entry (Settings, Developer) can be the navigation target too, so both lists are searched.
+        var match = NavigationItems.FirstOrDefault(i => i.ViewModelType == pageType)
+                    ?? FooterItems.FirstOrDefault(i => i.ViewModelType == pageType);
         if (match is not null && !ReferenceEquals(match, SelectedItem))
             SelectedItem = match;
     }
