@@ -18,11 +18,17 @@ public interface ISettingsService
     /// <summary>The stored <c>AzureDevOps</c> values, blank / empty where unset.</summary>
     AzureDevOpsSettings GetAzureDevOps();
 
+    /// <summary>The refresh interval (kept within bounds; the default when unparsable) and the notification switches.</summary>
+    NotificationSettings GetNotifications();
+
     /// <summary>Writes <c>UI:Theme</c> and <c>UI:Palette</c>.</summary>
     Task SaveAppearanceAsync(AppearanceSettings settings, CancellationToken ct = default);
 
     /// <summary>Writes the four <c>Workspace:*</c> keys.</summary>
     Task SaveWorkspaceAsync(WorkspaceSettings settings, CancellationToken ct = default);
+
+    /// <summary>Writes <c>UI:RefreshIntervalMinutes</c> and the <c>Notifications:*</c> switches.</summary>
+    Task SaveNotificationsAsync(NotificationSettings settings, CancellationToken ct = default);
 
     /// <summary>Writes <c>AzureDevOps:OrganizationUrl</c> and replaces <c>AzureDevOps:Projects</c>.</summary>
     Task SaveAzureDevOpsAsync(AzureDevOpsSettings settings, CancellationToken ct = default);

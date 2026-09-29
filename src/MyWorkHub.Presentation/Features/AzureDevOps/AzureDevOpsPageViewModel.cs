@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MyWorkHub.Core.Features.AzureDevOps;
+using MyWorkHub.Presentation.Navigation;
 using MyWorkHub.Presentation.ViewModels;
 
 namespace MyWorkHub.Presentation.Features.AzureDevOps;
@@ -11,7 +12,7 @@ namespace MyWorkHub.Presentation.Features.AzureDevOps;
 /// personal-access-token prompt instead of an error. A token entered on one page is stored for both.
 /// Subclasses only fetch and publish their data in <see cref="LoadDataAsync"/>.
 /// </summary>
-public abstract partial class AzureDevOpsPageViewModel : PageViewModel
+public abstract partial class AzureDevOpsPageViewModel : PageViewModel, IRefreshablePage
 {
     private readonly IAzureDevOpsConnectionService? _connection;
     private bool _isLoaded;

@@ -38,6 +38,7 @@ public sealed class SettingsPageTests
         var page = provider.GetRequiredService<SettingsViewModel>();
 
         Assert.True(page.Appearance.IsAvailable);
+        Assert.True(page.Notifications.IsAvailable);
         Assert.True(page.Workspace.IsAvailable);
         Assert.True(page.Workspace.CanBrowseFolders);
         Assert.True(page.Workspace.CanBrowseFiles);
@@ -53,9 +54,12 @@ public sealed class SettingsPageTests
         settings.Appearance = new AppearanceSettings("Dark", "OneDark");
         settings.Workspace = new WorkspaceSettings("claude", "/clones", "m", "");
         settings.AzureDevOps = new AzureDevOpsSettings("https://dev.azure.com/acme/", ["Alpha"]);
+        settings.Notifications = NotificationSettings.Default with { RefreshIntervalMinutes = 30, Emails = false };
 
         page.LoadCommand.Execute(null);
 
+        Assert.Equal(30m, page.Notifications.RefreshIntervalMinutes);
+        Assert.False(page.Notifications.Emails);
         Assert.Equal("OneDark", page.Appearance.SelectedPalette);
         Assert.Equal("/clones", page.Workspace.WorkFolderPath);
         Assert.Equal(["Alpha"], page.AzureDevOps.Projects);

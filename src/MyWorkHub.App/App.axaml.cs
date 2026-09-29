@@ -4,6 +4,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using MyWorkHub.Core.Abstractions;
 using MyWorkHub.Core.Configuration;
+using MyWorkHub.Presentation.Features.Updates;
 using MyWorkHub.UI;
 using MyWorkHub.UI.Views;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,8 +13,10 @@ using Quartz;
 
 namespace MyWorkHub.App;
 
-public partial class App : Application
+public sealed partial class App : Application, IDisposable
 {
+    private readonly CancellationTokenSource _updatesStop = new();
+
     private readonly IServiceProvider? _services;
 
     private Window? _mainWindow;
@@ -78,6 +81,7 @@ public partial class App : Application
             // MinimizeToTrayOnClose is false), not just the tray "Quit" command.
             desktop.ShutdownRequested += async (_, _) =>
             {
+                await _updatesStop.CancelAsync();
                 if (_scheduler is not null)
                 {
                     await _scheduler.Shutdown(waitForJobsToComplete: false);
@@ -86,6 +90,10 @@ public partial class App : Application
 
             // Quartz starts in the background and runs the scheduled automations (see AddAutomations).
             _ = StartSchedulerAsync();
+
+            // Runs on the UI thread for the whole session (also while hidden in the tray): new-item
+            // notifications and the periodic refresh of the page being shown (UI:RefreshIntervalMinutes).
+            _ = _services.GetRequiredService<UpdateWatcher>().RunAsync(_updatesStop.Token);
         }
 
         base.OnFrameworkInitializationCompleted();
@@ -120,6 +128,7 @@ public partial class App : Application
     private async void OnQuitClicked(object? sender, EventArgs e)
     {
         _isExiting = true;
+        await _updatesStop.CancelAsync();
         if (_scheduler is not null)
         {
             await _scheduler.Shutdown(waitForJobsToComplete: false);
@@ -140,4 +149,6 @@ public partial class App : Application
             _mainWindow?.Hide();
         }
     }
+
+    public void Dispose() => _updatesStop.Dispose();
 }

@@ -87,21 +87,25 @@ internal sealed class FakeEmailService(FakeGraphConnection connection, params Em
 
 internal sealed class FakeCalendarService(FakeGraphConnection connection, params CalendarEvent[] events) : ICalendarService
 {
+    public List<CalendarEvent> Events { get; } = [.. events];
+
     public int? RequestedDays { get; private set; }
 
     public Task<IReadOnlyList<CalendarEvent>> GetUpcomingEventsAsync(int days, CancellationToken ct = default)
     {
         connection.ThrowIfSignedOut();
         RequestedDays = days;
-        return Task.FromResult<IReadOnlyList<CalendarEvent>>(events);
+        return Task.FromResult<IReadOnlyList<CalendarEvent>>([.. Events]);
     }
 }
 
 internal sealed class FakeTeamsService(FakeGraphConnection connection, params TeamsChatItem[] chats) : ITeamsService
 {
+    public List<TeamsChatItem> Chats { get; } = [.. chats];
+
     public Task<IReadOnlyList<TeamsChatItem>> GetRecentChatsAsync(CancellationToken ct = default)
     {
         connection.ThrowIfSignedOut();
-        return Task.FromResult<IReadOnlyList<TeamsChatItem>>(chats);
+        return Task.FromResult<IReadOnlyList<TeamsChatItem>>([.. Chats]);
     }
 }

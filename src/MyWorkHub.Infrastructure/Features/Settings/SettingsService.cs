@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json.Nodes;
 using Microsoft.Extensions.Configuration;
 using MyWorkHub.Core.Configuration;
@@ -53,6 +54,45 @@ internal sealed class SettingsService : ISettingsService
         return new AzureDevOpsSettings(Raw(azureDevOps, nameof(AzureDevOpsOptions.OrganizationUrl)), projects);
     }
 
+    public NotificationSettings GetNotifications()
+    {
+        var defaults = NotificationSettings.Default;
+        var interval = int.TryParse(
+            _configuration.GetSection(UiOptions.SECTION)[nameof(UiOptions.RefreshIntervalMinutes)],
+            NumberStyles.Integer,
+            CultureInfo.InvariantCulture,
+            out var minutes)
+            ? minutes
+            : defaults.RefreshIntervalMinutes;
+        var notifications = _configuration.GetSection(NotificationOptions.SECTION);
+        return new NotificationSettings(
+            interval,
+            Flag(notifications, nameof(NotificationOptions.Emails), defaults.Emails),
+            Flag(notifications, nameof(NotificationOptions.TeamsChats), defaults.TeamsChats),
+            Flag(notifications, nameof(NotificationOptions.PullRequests), defaults.PullRequests),
+            Flag(notifications, nameof(NotificationOptions.WorkItems), defaults.WorkItems),
+            Flag(notifications, nameof(NotificationOptions.Mentions), defaults.Mentions),
+            Flag(notifications, nameof(NotificationOptions.CalendarEvents), defaults.CalendarEvents)).Normalize();
+    }
+
+    public Task SaveNotificationsAsync(NotificationSettings settings, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        var normalized = settings.Normalize();
+        return SaveAsync(root =>
+        {
+            var ui = JsonSettingsFile.Section(root, UiOptions.SECTION);
+            JsonSettingsFile.Set(ui, nameof(UiOptions.RefreshIntervalMinutes), normalized.RefreshIntervalMinutes);
+            var notifications = JsonSettingsFile.Section(root, NotificationOptions.SECTION);
+            JsonSettingsFile.Set(notifications, nameof(NotificationOptions.Emails), normalized.Emails);
+            JsonSettingsFile.Set(notifications, nameof(NotificationOptions.TeamsChats), normalized.TeamsChats);
+            JsonSettingsFile.Set(notifications, nameof(NotificationOptions.PullRequests), normalized.PullRequests);
+            JsonSettingsFile.Set(notifications, nameof(NotificationOptions.WorkItems), normalized.WorkItems);
+            JsonSettingsFile.Set(notifications, nameof(NotificationOptions.Mentions), normalized.Mentions);
+            JsonSettingsFile.Set(notifications, nameof(NotificationOptions.CalendarEvents), normalized.CalendarEvents);
+        }, ct);
+    }
+
     public Task SaveAppearanceAsync(AppearanceSettings settings, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(settings);
@@ -99,6 +139,9 @@ internal sealed class SettingsService : ISettingsService
             root.Reload();
         }
     }
+
+    private static bool Flag(IConfigurationSection section, string key, bool fallback)
+        => bool.TryParse(section[key], out var value) ? value : fallback;
 
     private static string Raw(IConfigurationSection section, string key) => section[key]?.Trim() ?? "";
 }

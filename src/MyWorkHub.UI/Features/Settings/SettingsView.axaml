@@ -65,6 +65,38 @@
                 </ScrollViewer>
             </TabItem>
 
+            <!-- Notifications: how often to look for new items, and which sources notify. Saved on every change. -->
+            <TabItem Header="Notifications">
+                <ScrollViewer>
+                    <StackPanel Spacing="12" MaxWidth="720" HorizontalAlignment="Left" Margin="0,12,0,0">
+                        <TextBlock Classes="hint"
+                                   Text="Settings are not available."
+                                   IsVisible="{Binding !Notifications.IsAvailable}" />
+                        <TextBlock Classes="hint" TextWrapping="Wrap"
+                                   Text="MyWorkHub looks for new items at this interval — also while it is hidden in the tray — shows one notification per new item and refreshes the page you are on. Changes apply from the next check." />
+
+                        <TextBlock Classes="label" Text="Check every (minutes)" />
+                        <NumericUpDown Value="{Binding Notifications.RefreshIntervalMinutes}"
+                                       Minimum="{x:Static vm:NotificationSettingsViewModel.MinRefreshIntervalMinutes}"
+                                       Maximum="{x:Static vm:NotificationSettingsViewModel.MaxRefreshIntervalMinutes}"
+                                       Increment="1" FormatString="0" Width="160" HorizontalAlignment="Left"
+                                       IsEnabled="{Binding Notifications.IsAvailable}" />
+
+                        <TextBlock Classes="label" Text="Notify me about" />
+                        <CheckBox Content="New unread emails (watched folders)" IsChecked="{Binding Notifications.Emails}" IsEnabled="{Binding Notifications.IsAvailable}" />
+                        <CheckBox Content="New Teams chat messages" IsChecked="{Binding Notifications.TeamsChats}" IsEnabled="{Binding Notifications.IsAvailable}" />
+                        <CheckBox Content="Pull requests I am asked to review" IsChecked="{Binding Notifications.PullRequests}" IsEnabled="{Binding Notifications.IsAvailable}" />
+                        <CheckBox Content="Work items assigned to me" IsChecked="{Binding Notifications.WorkItems}" IsEnabled="{Binding Notifications.IsAvailable}" />
+                        <CheckBox Content="@mentions in work item comments" IsChecked="{Binding Notifications.Mentions}" IsEnabled="{Binding Notifications.IsAvailable}" />
+                        <CheckBox Content="New calendar events in the coming week" IsChecked="{Binding Notifications.CalendarEvents}" IsEnabled="{Binding Notifications.IsAvailable}" />
+
+                        <TextBlock Classes="error"
+                                   Text="{Binding Notifications.ErrorMessage}"
+                                   IsVisible="{Binding Notifications.ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
             <!-- Workspace: Claude CLI + where PR reviews clone repositories. -->
             <TabItem Header="Workspace">
                 <ScrollViewer>

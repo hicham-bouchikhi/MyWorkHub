@@ -7,8 +7,8 @@ using MyWorkHub.Presentation.ViewModels;
 namespace MyWorkHub.Presentation.Features.Settings;
 
 /// <summary>
-/// The Settings page: one place for every user-editable setting, as tabs — Appearance, Workspace, Azure DevOps
-/// and About. Values are re-read from the configuration each time the page is shown (<see cref="LoadCommand"/>,
+/// The Settings page: one place for every user-editable setting, as tabs — Appearance, Notifications, Workspace,
+/// Azure DevOps and About. Values are re-read from the configuration each time the page is shown (<see cref="LoadCommand"/>,
 /// run by the view), so a hand edit of <c>appsettings.json</c> is reflected too. Every section saves on its own.
 /// Nothing here needs a restart: appearance is applied live, and the Workspace / Azure DevOps services re-read
 /// their section on every use.
@@ -25,12 +25,15 @@ public sealed partial class SettingsViewModel : PageViewModel
         : base("Settings")
     {
         Appearance = new AppearanceSettingsViewModel(settings, theme);
+        Notifications = new NotificationSettingsViewModel(settings);
         Workspace = new WorkspaceSettingsViewModel(settings, folderPicker, filePicker);
         AzureDevOps = new AzureDevOpsSettingsViewModel(settings, azureDevOpsConnection);
         About = new AboutViewModel(browser);
     }
 
     public AppearanceSettingsViewModel Appearance { get; }
+
+    public NotificationSettingsViewModel Notifications { get; }
 
     public WorkspaceSettingsViewModel Workspace { get; }
 
@@ -43,6 +46,7 @@ public sealed partial class SettingsViewModel : PageViewModel
     private void Load()
     {
         Appearance.Load();
+        Notifications.Load();
         Workspace.Load();
         AzureDevOps.Load();
     }

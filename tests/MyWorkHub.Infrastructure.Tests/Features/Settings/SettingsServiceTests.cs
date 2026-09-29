@@ -75,6 +75,43 @@ public sealed class SettingsServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Should_persist_the_refresh_interval_and_notification_switches_and_keep_the_other_ui_keys()
+    {
+        var settings = new NotificationSettings(10, Emails: false, TeamsChats: true, PullRequests: false,
+            WorkItems: true, Mentions: false, CalendarEvents: true);
+
+        await _fixture.Service.SaveNotificationsAsync(settings, TestContext.Current.CancellationToken);
+
+        Assert.Equal(settings, _fixture.Service.GetNotifications());
+        var onDisk = OnDisk();
+        Assert.Equal(10, (int)onDisk["UI"]!["RefreshIntervalMinutes"]!);
+        Assert.Equal("System", (string?)onDisk["UI"]!["Theme"]);
+        Assert.False((bool)onDisk["Notifications"]!["Emails"]!);
+        Assert.True((bool)onDisk["Notifications"]!["CalendarEvents"]!);
+    }
+
+    [Fact]
+    public void Should_enable_every_notification_every_five_minutes_when_nothing_is_configured()
+    {
+        using var fixture = new SettingsFileFixture("{}");
+
+        Assert.Equal(NotificationSettings.Default, fixture.Service.GetNotifications());
+        Assert.Equal(new NotificationSettings(5, true, true, true, true, true, true), NotificationSettings.Default);
+    }
+
+    [Theory]
+    [InlineData("0", 1)]
+    [InlineData("-3", 1)]
+    [InlineData("100000", 240)]
+    [InlineData("not a number", 5)]
+    public void Should_keep_a_hand_edited_refresh_interval_within_bounds_when_reading(string raw, int expected)
+    {
+        using var fixture = new SettingsFileFixture($$"""{ "UI": { "RefreshIntervalMinutes": "{{raw}}" } }""");
+
+        Assert.Equal(expected, fixture.Service.GetNotifications().RefreshIntervalMinutes);
+    }
+
+    [Fact]
     public void Should_normalize_hand_edited_appearance_values_when_reading()
     {
         using var fixture = new SettingsFileFixture("""{ "UI": { "Theme": " dark ", "Palette": "NoSuchPalette" } }""");
