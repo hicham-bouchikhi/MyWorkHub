@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using MyWorkHub.Core.Features.Settings;
 
 namespace MyWorkHub.Infrastructure.Features.Email;
 
@@ -14,8 +15,6 @@ internal sealed record EmailOptions(IReadOnlyList<string> FolderIds, int MaxPerF
     public const string SECTION = "Email";
 
     private const string DEFAULT_FOLDER = "inbox";
-    private const int DEFAULT_MAX_PER_FOLDER = 25;
-    private const int MAX_PER_FOLDER_LIMIT = 100;
 
     public static EmailOptions FromConfiguration(IConfiguration configuration)
     {
@@ -34,8 +33,8 @@ internal sealed record EmailOptions(IReadOnlyList<string> FolderIds, int MaxPerF
         }
 
         var maxPerFolder = int.TryParse(section[nameof(MaxPerFolder)], out var configured)
-            ? Math.Clamp(configured, 1, MAX_PER_FOLDER_LIMIT)
-            : DEFAULT_MAX_PER_FOLDER;
+            ? Math.Clamp(configured, EmailSettings.PerFolderMin, EmailSettings.PerFolderMax)
+            : EmailSettings.PerFolderDefault;
 
         return new EmailOptions(folderIds, maxPerFolder);
     }

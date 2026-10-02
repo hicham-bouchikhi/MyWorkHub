@@ -126,7 +126,7 @@ public sealed class EmailViewModelTests
 
         viewModel.SelectedItem = viewModel.Items[0];
 
-        Assert.Equal("Body of a", viewModel.SelectedBody);
+        Assert.Equal("Body of a", viewModel.SelectedHtml);
         Assert.False(viewModel.IsBodyLoading);
     }
 
@@ -146,7 +146,7 @@ public sealed class EmailViewModelTests
         slow.SetResult();
         await Task.Yield();
 
-        Assert.Equal("Body of b", viewModel.SelectedBody);
+        Assert.Equal("Body of b", viewModel.SelectedHtml);
         Assert.False(viewModel.IsBodyLoading);
     }
 
@@ -160,7 +160,7 @@ public sealed class EmailViewModelTests
         viewModel.SelectedItem = viewModel.Items[0];
 
         Assert.True(viewModel.NeedsSignIn);
-        Assert.Equal("", viewModel.SelectedBody);
+        Assert.Equal("", viewModel.SelectedHtml);
     }
 
     // --- Deep links (IDeepLinkTarget) --------------------------------------------------------
@@ -175,7 +175,7 @@ public sealed class EmailViewModelTests
 
         Assert.Equal("target", viewModel.SelectedItem?.Id);
         Assert.Same(viewModel.SelectedItem, viewModel.HighlightedItem);
-        Assert.Equal("Body of target", viewModel.SelectedBody);
+        Assert.Equal("Body of target", viewModel.SelectedHtml);
     }
 
     [Fact]
@@ -228,5 +228,22 @@ public sealed class EmailViewModelTests
 
         Assert.Equal(typeof(EmailViewModel), target.ViewModelType);
         Assert.Equal("AAMkAGI2", target.ElementId);
+    }
+
+    [Fact]
+    public async Task Should_not_fault_when_a_running_load_is_superseded_by_a_new_one()
+    {
+        var connection = new FakeGraphConnection();
+        var email = new FakeEmailService(connection, FakeEmailService.Item("a")) { ListGate = new TaskCompletionSource() };
+        var viewModel = new EmailViewModel(email, connection);
+
+        // The toolkit cancels the first run's token when the command executes again (e.g. the page is revisited).
+        var first = viewModel.RefreshCommand.ExecuteAsync(null);
+        email.ListGate = null;
+        await viewModel.RefreshCommand.ExecuteAsync(null);
+        await first;
+
+        Assert.Equal(["a"], viewModel.Items.Select(r => r.Id));
+        Assert.Null(viewModel.ErrorMessage);
     }
 }

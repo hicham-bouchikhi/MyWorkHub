@@ -21,12 +21,15 @@
                        FontWeight="SemiBold" />
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                 <Button Content="Summarize"
-                        ToolTip.Tip="AI digest of the loaded emails (Claude CLI)"
+                        ToolTip.Tip="AI digest of the listed emails (Claude CLI)"
                         Command="{Binding SummarizeCommand}"
                         IsVisible="{Binding IsSummaryAvailable}" />
                 <Button Content="Stop"
                         Command="{Binding SummarizeCancelCommand}"
                         IsVisible="{Binding SummarizeCommand.IsRunning}" />
+                <Button Content="Stop"
+                        Command="{Binding SummarizeSelectedCancelCommand}"
+                        IsVisible="{Binding SummarizeSelectedCommand.IsRunning}" />
                 <Button Content="Refresh"
                         Command="{Binding RefreshCommand}"
                         IsVisible="{Binding IsAvailable}" />
@@ -42,7 +45,7 @@
                         IsVisible="{Binding SummaryStatus, Converter={x:Static ObjectConverters.IsNotNull}}">
                 <ProgressBar IsIndeterminate="True"
                              Width="80"
-                             IsVisible="{Binding SummarizeCommand.IsRunning}" />
+                             IsVisible="{Binding SummaryStatus, Converter={x:Static ObjectConverters.IsNotNull}}" />
                 <TextBlock Text="{Binding SummaryStatus}"
                            Foreground="{DynamicResource AppTextMutedBrush}"
                            TextTrimming="CharacterEllipsis" />
@@ -61,12 +64,34 @@
             </Border>
         </StackPanel>
 
-        <!-- List on the left, reading pane on the right. -->
-        <Grid Grid.Row="3" ColumnDefinitions="2*,3*" ColumnSpacing="16">
+        <!-- Folder tree, then the folder's messages, then the reading pane. -->
+        <Grid Grid.Row="3" ColumnDefinitions="220,2*,3*" ColumnSpacing="16">
+
+            <TreeView Grid.Column="0"
+                      ItemsSource="{Binding Folders}"
+                      SelectedItem="{Binding SelectedFolder}"
+                      Background="Transparent">
+                <TreeView.Styles>
+                    <Style Selector="TreeViewItem" x:DataType="vm:MailFolderViewModel">
+                        <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+                    </Style>
+                </TreeView.Styles>
+                <TreeView.ItemTemplate>
+                    <TreeDataTemplate x:DataType="vm:MailFolderViewModel" ItemsSource="{Binding Children}">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                            <TextBlock Grid.Column="0" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding UnreadText}"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource AppAccentBrush}" />
+                        </Grid>
+                    </TreeDataTemplate>
+                </TreeView.ItemTemplate>
+            </TreeView>
 
             <!-- A real ListBox (selection + ScrollIntoView), not a bare ItemsControl, so deep links
                  can land on a row. It scrolls itself: do not wrap it in a ScrollViewer. -->
-            <ListBox Grid.Column="0"
+            <ListBox Grid.Column="1"
                      ItemsSource="{Binding Items}"
                      SelectedItem="{Binding SelectedItem}"
                      behaviors:ScrollIntoViewBehavior.Item="{Binding HighlightedItem}"
@@ -108,27 +133,51 @@
                 </ListBox.ItemTemplate>
             </ListBox>
 
-            <Border Grid.Column="1"
+            <!-- The reading pane renders the message's HTML in a sandboxed native WebView
+                 (EmailHtmlDocument's CSP; every navigation is intercepted in code-behind). -->
+            <Border Grid.Column="2"
                     Classes="card"
                     Padding="16"
                     IsVisible="{Binding SelectedItem, Converter={x:Static ObjectConverters.IsNotNull}}">
-                <Grid RowDefinitions="Auto,Auto,*">
-                    <TextBlock Grid.Row="0"
-                               Text="{Binding SelectedItem.Subject, FallbackValue=''}"
-                               FontSize="18"
-                               FontWeight="SemiBold"
-                               TextWrapping="Wrap" />
+                <Grid RowDefinitions="Auto,Auto,Auto,*">
+                    <Grid Grid.Row="0" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0"
+                                   Text="{Binding SelectedItem.Subject, FallbackValue=''}"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   TextWrapping="Wrap" />
+                        <Button Grid.Column="1"
+                                Content="Summarize this email"
+                                ToolTip.Tip="AI summary of the open email only (Claude CLI)"
+                                VerticalAlignment="Top"
+                                Command="{Binding SummarizeSelectedCommand}"
+                                IsVisible="{Binding IsSummaryAvailable}" />
+                    </Grid>
                     <TextBlock Grid.Row="1"
                                Text="{Binding SelectedItem.From, FallbackValue=''}"
                                Foreground="{DynamicResource AppTextMutedBrush}"
-                               Margin="0,4,0,12" />
-                    <Panel Grid.Row="2">
+                               Margin="0,4,0,8" />
+                    <Border Grid.Row="2"
+                            Background="{DynamicResource AppSurfaceBrush}"
+                            BorderBrush="{DynamicResource AppAccentBrush}"
+                            BorderThickness="1"
+                            CornerRadius="4"
+                            Padding="8,4"
+                            Margin="0,0,0,8"
+                            IsVisible="{Binding HasBlockedImages}">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                            <TextBlock Grid.Column="0"
+                                       Text="Remote images were blocked to protect your privacy."
+                                       VerticalAlignment="Center"
+                                       TextWrapping="Wrap" />
+                            <Button Grid.Column="1" Content="Load images" Command="{Binding LoadImagesCommand}" />
+                        </Grid>
+                    </Border>
+                    <Panel Grid.Row="3">
+                        <NativeWebView x:Name="Reader" />
                         <ProgressBar IsIndeterminate="True"
                                      IsVisible="{Binding IsBodyLoading}"
                                      VerticalAlignment="Top" />
-                        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
-                            <SelectableTextBlock Text="{Binding SelectedBody}" TextWrapping="Wrap" />
-                        </ScrollViewer>
                     </Panel>
                 </Grid>
             </Border>

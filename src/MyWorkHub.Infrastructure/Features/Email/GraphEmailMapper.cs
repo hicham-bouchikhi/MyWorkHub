@@ -21,7 +21,8 @@ internal static class GraphEmailMapper
             // bodyPreview is Graph's own plain-text truncation, but it still leaves HTML entities
             // (&amp;, &#39;, &nbsp;) undecoded for messages that originated as HTML -- decode them so the
             // list doesn't show literal entity codes instead of the punctuation/spaces they represent.
-            WebUtility.HtmlDecode(message.BodyPreview ?? ""),
+            // The list shows it as a short summary, so it is flattened to one line without link targets.
+            EmailTextCleaner.CleanPreview(WebUtility.HtmlDecode(message.BodyPreview ?? "")),
             message.ReceivedDateTime?.UtcDateTime ?? DateTime.MinValue,
             message.Flag?.FlagStatus == FollowupFlagStatus.Flagged,
             message.IsRead ?? false,

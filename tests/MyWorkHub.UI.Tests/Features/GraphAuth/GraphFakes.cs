@@ -61,15 +61,23 @@ internal sealed class FakeEmailService(FakeGraphConnection connection, params Em
         => new(id, "Alice", "Subject " + id, "Preview", new DateTime(2026, 9, 25, 9, 0, 0, DateTimeKind.Utc).AddMinutes(-minutesAgo),
             IsFlagged: false, IsRead: false, "Inbox");
 
-    public Task<IReadOnlyList<EmailItem>> GetRecentEmailsAsync(CancellationToken ct = default)
+    /// <summary>When set, list fetches wait for this gate or for cancellation (to simulate a slow load).</summary>
+    public TaskCompletionSource? ListGate { get; set; }
+
+    public async Task<IReadOnlyList<EmailItem>> GetRecentEmailsAsync(CancellationToken ct = default)
     {
         connection.ThrowIfSignedOut();
+        if (ListGate is { } gate)
+        {
+            await gate.Task.WaitAsync(ct);
+        }
+
         if (Failure is not null)
         {
             throw Failure;
         }
 
-        return Task.FromResult<IReadOnlyList<EmailItem>>([.. Emails]);
+        return [.. Emails];
     }
 
     public async Task<string> GetEmailBodyAsync(string id, CancellationToken ct = default)
@@ -82,6 +90,44 @@ internal sealed class FakeEmailService(FakeGraphConnection connection, params Em
         }
 
         return "Body of " + id;
+    }
+
+    public async Task<string> GetEmailHtmlAsync(string id, CancellationToken ct = default)
+        => await GetEmailBodyAsync(id, ct);
+
+    /// <summary>The mailbox folder tree returned by <see cref="GetFoldersAsync"/>.</summary>
+    public List<MailFolderNode> Folders { get; } = [];
+
+    /// <summary>Messages per folder id for <see cref="GetFolderEmailsAsync"/>.</summary>
+    public Dictionary<string, List<EmailItem>> FolderEmails { get; } = [];
+
+    public Task<IReadOnlyList<MailFolderNode>> GetFoldersAsync(CancellationToken ct = default)
+    {
+        connection.ThrowIfSignedOut();
+        return Task.FromResult<IReadOnlyList<MailFolderNode>>([.. Folders]);
+    }
+
+    /// <summary>Well-known names (e.g. <c>inbox</c>) and the real ids <see cref="GetFolderIdAsync"/> resolves them to.</summary>
+    public Dictionary<string, string> WellKnownFolders { get; } = [];
+
+    public Task<string?> GetFolderIdAsync(string idOrWellKnownName, CancellationToken ct = default)
+    {
+        connection.ThrowIfSignedOut();
+        if (WellKnownFolders.TryGetValue(idOrWellKnownName, out var id))
+        {
+            return Task.FromResult<string?>(id);
+        }
+
+        var exists = Folders.SelectMany(Flatten).Any(f => f.Id == idOrWellKnownName);
+        return Task.FromResult(exists ? idOrWellKnownName : null);
+    }
+
+    private static IEnumerable<MailFolderNode> Flatten(MailFolderNode folder) => folder.Children.SelectMany(Flatten).Prepend(folder);
+
+    public Task<IReadOnlyList<EmailItem>> GetFolderEmailsAsync(string folderId, CancellationToken ct = default)
+    {
+        connection.ThrowIfSignedOut();
+        return Task.FromResult<IReadOnlyList<EmailItem>>(FolderEmails.TryGetValue(folderId, out var list) ? [.. list] : []);
     }
 }
 

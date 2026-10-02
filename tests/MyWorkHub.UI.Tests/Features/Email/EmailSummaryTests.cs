@@ -34,6 +34,19 @@ public sealed class EmailSummaryTests
     }
 
     [Fact]
+    public async Task Should_summarize_only_the_open_email_when_asked_for_this_one()
+    {
+        var viewModel = await LoadedAsync("a", "b");
+        Assert.False(viewModel.SummarizeSelectedCommand.CanExecute(null));
+
+        viewModel.SelectedItem = viewModel.Items[1];
+        await viewModel.SummarizeSelectedCommand.ExecuteAsync(null);
+
+        Assert.Equal(["b"], Assert.Single(_summary.Requests).Select(e => e.Id));
+        Assert.Equal("Digest of 1", viewModel.SummaryText);
+    }
+
+    [Fact]
     public async Task Should_only_allow_summarizing_once_emails_are_loaded()
     {
         var email = new FakeEmailService(_connection, FakeEmailService.Item("a"));

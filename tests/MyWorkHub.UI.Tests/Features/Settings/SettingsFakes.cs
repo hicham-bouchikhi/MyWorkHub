@@ -12,6 +12,8 @@ internal sealed class FakeSettingsService : ISettingsService
 
     public AzureDevOpsSettings AzureDevOps { get; set; } = new("https://dev.azure.com/cegid/", []);
 
+    public EmailSettings Email { get; set; } = new(["inbox"], 25);
+
     /// <summary>Every save, as the record passed in, in call order (shared with other fakes via <see cref="Log"/>).</summary>
     public List<object> Saves { get; } = [];
 
@@ -26,6 +28,8 @@ internal sealed class FakeSettingsService : ISettingsService
 
     public AzureDevOpsSettings GetAzureDevOps() => AzureDevOps;
 
+    public EmailSettings GetEmail() => Email;
+
     public Task SaveAppearanceAsync(AppearanceSettings settings, CancellationToken ct = default)
         => Record(settings, () => Appearance = settings);
 
@@ -34,6 +38,9 @@ internal sealed class FakeSettingsService : ISettingsService
 
     public Task SaveAzureDevOpsAsync(AzureDevOpsSettings settings, CancellationToken ct = default)
         => Record(settings, () => AzureDevOps = settings);
+
+    public Task SaveEmailAsync(EmailSettings settings, CancellationToken ct = default)
+        => Record(settings, () => Email = settings);
 
     private Task Record(object settings, Action apply)
     {

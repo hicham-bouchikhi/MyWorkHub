@@ -111,7 +111,13 @@ public abstract partial class GraphPageViewModel : PageViewModel
             NeedsSignIn = false;
             ErrorMessage = null;
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // Superseded: the command cancels a still-running execution when it is executed again (e.g. the
+            // page is revisited mid-load). The newer run owns the page; rethrowing would crash the dispatcher.
+            return;
+        }
+        catch (Exception ex)
         {
             ReportFailure(ex);
             return;

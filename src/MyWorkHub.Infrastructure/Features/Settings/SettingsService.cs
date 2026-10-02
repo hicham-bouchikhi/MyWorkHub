@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using MyWorkHub.Core.Configuration;
 using MyWorkHub.Core.Features.Settings;
 using MyWorkHub.Infrastructure.Features.AzureDevOps;
+using MyWorkHub.Infrastructure.Features.Email;
 using MyWorkHub.Infrastructure.Features.Workspace;
 
 namespace MyWorkHub.Infrastructure.Features.Settings;
@@ -53,6 +54,20 @@ internal sealed class SettingsService : ISettingsService
         return new AzureDevOpsSettings(Raw(azureDevOps, nameof(AzureDevOpsOptions.OrganizationUrl)), projects);
     }
 
+    public EmailSettings GetEmail()
+    {
+        var email = _configuration.GetSection(EmailOptions.SECTION);
+        List<string> folderIds = [.. email.GetSection(nameof(EmailOptions.FolderIds)).GetChildren()
+            .Select(c => c.Value?.Trim())
+            .OfType<string>()
+            .Where(id => id.Length > 0)];
+        var maxPerFolder = int.TryParse(email[nameof(EmailOptions.MaxPerFolder)], out var configured)
+            ? Math.Clamp(configured, EmailSettings.PerFolderMin, EmailSettings.PerFolderMax)
+            : EmailSettings.PerFolderDefault;
+        var showFavorites = bool.TryParse(email[nameof(EmailSettings.ShowFavorites)], out var show) && show;
+        return new EmailSettings(folderIds, maxPerFolder, showFavorites);
+    }
+
     public Task SaveAppearanceAsync(AppearanceSettings settings, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(settings);
@@ -89,11 +104,25 @@ internal sealed class SettingsService : ISettingsService
         }, ct);
     }
 
+    public Task SaveEmailAsync(EmailSettings settings, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        return SaveAsync(root =>
+        {
+            var email = JsonSettingsFile.Section(root, EmailOptions.SECTION);
+            JsonSettingsFile.Set(email, nameof(EmailOptions.FolderIds),
+                new JsonArray([.. settings.FolderIds.Select(id => (JsonNode?)JsonValue.Create(id))]));
+            JsonSettingsFile.Set(email, nameof(EmailOptions.MaxPerFolder),
+                JsonValue.Create(Math.Clamp(settings.MaxPerFolder, EmailSettings.PerFolderMin, EmailSettings.PerFolderMax)));
+            JsonSettingsFile.Set(email, nameof(EmailSettings.ShowFavorites), JsonValue.Create(settings.ShowFavorites));
+        }, ct);
+    }
+
     private async Task SaveAsync(Action<JsonObject> update, CancellationToken ct)
     {
         await _file.UpdateAsync(update, ct).ConfigureAwait(false);
 
-        // The array under AzureDevOps:Projects may have shrunk: a reload (not a merge) drops the stale entries.
+        // An array (AzureDevOps:Projects, Email:FolderIds) may have shrunk: a reload (not a merge) drops the stale entries.
         if (_configuration is IConfigurationRoot root)
         {
             root.Reload();

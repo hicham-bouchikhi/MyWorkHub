@@ -13,6 +13,7 @@ internal sealed class Program
     public static void Main(string[] args)
     {
         AppPaths.EnsureCreated();
+        ConfigureWebKit();
 
         using var singleInstance = SingleInstanceGuard.Acquire();
         if (singleInstance.IsAlreadyRunning)
@@ -28,6 +29,18 @@ internal sealed class Program
         {
             services.Dispose();
             Log.CloseAndFlush();
+        }
+    }
+
+    // The email reader's WebKitGTK paints an empty pane with accelerated compositing on NVIDIA drivers under
+    // Wayland/XWayland. It must be in the *native* environment before WebKit starts (WebKit reads it with getenv and
+    // its web process inherits it): on Unix, Environment.SetEnvironmentVariable only updates .NET's own copy, so
+    // libc setenv is called instead. A value the user exported wins (overwrite = 0).
+    private static void ConfigureWebKit()
+    {
+        if (OperatingSystem.IsLinux())
+        {
+            _ = NativeMethods.setenv("WEBKIT_DISABLE_COMPOSITING_MODE", "1", overwrite: 0);
         }
     }
 

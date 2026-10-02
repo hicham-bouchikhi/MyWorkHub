@@ -231,6 +231,61 @@
                 </ScrollViewer>
             </TabItem>
 
+            <!-- Email: the folders merged into the Email page's Favorites, ticked in the real mailbox tree. -->
+            <TabItem Header="Email">
+                <ScrollViewer>
+                    <StackPanel Spacing="8" MaxWidth="720" HorizontalAlignment="Left" Margin="0,12,0,0">
+                        <TextBlock Classes="hint"
+                                   Text="Settings are not available."
+                                   IsVisible="{Binding !Email.IsAvailable}" />
+                        <TextBlock Classes="hint"
+                                   Text="Saved changes apply on the Email page's next Refresh — no restart needed." />
+
+                        <CheckBox Content="Show Favorites in the Email page's folder tree"
+                                  IsChecked="{Binding Email.ShowFavorites}"
+                                  Margin="0,8,0,0" />
+                        <TextBlock Classes="hint"
+                                   Text="Favorites merges the ticked folders below, newest first, into one list at the top of the tree. When it is hidden, the Email page opens on your Inbox." />
+
+                        <TextBlock Classes="label" Text="Favorite folders" Margin="0,8,0,0" />
+                        <TextBlock Classes="hint"
+                                   Text="{Binding Email.FolderNotice}"
+                                   IsVisible="{Binding Email.FolderNotice, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                        <TreeView ItemsSource="{Binding Email.Folders}"
+                                  MaxHeight="420"
+                                  IsVisible="{Binding !!Email.Folders.Count}">
+                            <TreeView.ItemTemplate>
+                                <TreeDataTemplate x:DataType="vm:EmailFolderOptionViewModel" ItemsSource="{Binding Children}">
+                                    <CheckBox Content="{Binding Name}" IsChecked="{Binding IsChecked}" />
+                                </TreeDataTemplate>
+                            </TreeView.ItemTemplate>
+                        </TreeView>
+
+                        <TextBlock Classes="label" Text="Messages per folder" Margin="0,8,0,0" />
+                        <!-- Bounds mirror EmailSettings.PerFolderMin/Max (NumericUpDown takes decimals); the view model clamps too. -->
+                        <NumericUpDown Value="{Binding Email.MaxPerFolder}"
+                                       Minimum="1"
+                                       Maximum="100"
+                                       Increment="5"
+                                       FormatString="0"
+                                       Width="160"
+                                       HorizontalAlignment="Left" />
+
+                        <Button Content="Save"
+                                Classes="accent"
+                                Command="{Binding Email.SaveCommand}"
+                                Margin="0,8,0,0" />
+
+                        <TextBlock Classes="status"
+                                   Text="{Binding Email.StatusMessage}"
+                                   IsVisible="{Binding Email.StatusMessage, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                        <TextBlock Classes="error"
+                                   Text="{Binding Email.ErrorMessage}"
+                                   IsVisible="{Binding Email.ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
             <TabItem Header="About">
                 <ScrollViewer>
                     <StackPanel Spacing="8" MaxWidth="720" HorizontalAlignment="Left" Margin="0,12,0,0">

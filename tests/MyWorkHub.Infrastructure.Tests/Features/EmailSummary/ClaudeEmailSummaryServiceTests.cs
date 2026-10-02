@@ -111,6 +111,18 @@ public sealed class ClaudeEmailSummaryServiceTests
         public Task<IReadOnlyList<EmailItem>> GetRecentEmailsAsync(CancellationToken ct = default)
             => throw new NotSupportedException();
 
+        public Task<string> GetEmailHtmlAsync(string id, CancellationToken ct = default)
+            => throw new NotSupportedException();
+
+        public Task<IReadOnlyList<MailFolderNode>> GetFoldersAsync(CancellationToken ct = default)
+            => throw new NotSupportedException();
+
+        public Task<IReadOnlyList<EmailItem>> GetFolderEmailsAsync(string folderId, CancellationToken ct = default)
+            => throw new NotSupportedException();
+
+        public Task<string?> GetFolderIdAsync(string idOrWellKnownName, CancellationToken ct = default)
+            => throw new NotSupportedException();
+
         public Task<string> GetEmailBodyAsync(string id, CancellationToken ct = default)
         {
             BodyRequests.Add(id);

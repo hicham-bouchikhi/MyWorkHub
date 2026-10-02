@@ -5,6 +5,8 @@
     <!-- Cross-platform desktop app (Windows/Linux/macOS via Avalonia.Desktop). -->
     <TargetFramework>net10.0</TargetFramework>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <!-- LibraryImport (NativeMethods.setenv) generates unsafe marshalling code. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <!-- The Win32 application manifest only means anything on Windows; applying it

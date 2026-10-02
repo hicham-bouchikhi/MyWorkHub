@@ -11,6 +11,7 @@ public sealed class EmailRowViewModel
     public EmailRowViewModel(EmailItem item)
     {
         ArgumentNullException.ThrowIfNull(item);
+        Item = item;
         Id = item.Id;
         From = item.From;
         Subject = string.IsNullOrWhiteSpace(item.Subject) ? "(no subject)" : item.Subject;
@@ -20,6 +21,9 @@ public sealed class EmailRowViewModel
         IsUnread = !item.IsRead;
         ReceivedAtText = item.ReceivedAt.ToLocalTime().ToString(RECEIVED_FORMAT, CultureInfo.CurrentCulture);
     }
+
+    /// <summary>The message header this row shows (what a single-email summary is built from).</summary>
+    public EmailItem Item { get; }
 
     public string Id { get; }
 

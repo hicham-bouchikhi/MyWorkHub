@@ -168,4 +168,30 @@ public sealed class SettingsServiceTests : IDisposable
 
         Assert.Contains(services, d => d.ServiceType == typeof(ISettingsService));
     }
+
+    [Fact]
+    public void Should_read_the_email_folders_and_limit()
+    {
+        Assert.Equal(["inbox"], _fixture.Service.GetEmail().FolderIds);
+        Assert.Equal(25, _fixture.Service.GetEmail().MaxPerFolder);
+        Assert.False(_fixture.Service.GetEmail().ShowFavorites);
+    }
+
+    [Fact]
+    public async Task Should_replace_the_folder_list_clamp_the_limit_and_keep_other_sections_when_saving_email()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var before = Parse(SettingsFileFixture.SHIPPED_LIKE_JSON);
+        await _fixture.Service.SaveEmailAsync(new EmailSettings(["inbox", "a-id", "b-id"], 40), ct);
+
+        await _fixture.Service.SaveEmailAsync(new EmailSettings(["b-id"], 500, ShowFavorites: true), ct);
+
+        var after = OnDisk();
+        Assert.Equal(["b-id"], after["Email"]!["FolderIds"]!.AsArray().Select(p => (string?)p));
+        Assert.Equal(100, (int)after["Email"]!["MaxPerFolder"]!);
+        Assert.True((bool)after["Email"]!["ShowFavorites"]!);
+        Assert.True(_fixture.Service.GetEmail().ShowFavorites);
+        Assert.Equal(new EmailSettings(["b-id"], 100).FolderIds, _fixture.Service.GetEmail().FolderIds);
+        Assert.True(JsonNode.DeepEquals(before["AzureDevOps"], after["AzureDevOps"]));
+    }
 }
