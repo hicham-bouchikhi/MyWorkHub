@@ -17,6 +17,9 @@ decision — a new ADR supersedes it instead.
 | [0004](0004-element-level-deep-linking.md) | Element-level deep-linking via NavigationTarget + IDeepLinkTarget, not a generic event bus | Accepted |
 | [0005](0005-cli-agent-runner-is-claude-specific.md) | ICliAgentRunner is a Claude Code abstraction, not a provider-agnostic agent-CLI interface | Accepted |
 | [0006](0006-scoped-live-settings-reload.md) | Scoped live-reload for edited settings via LiveOptions&lt;T&gt; and a polling file provider | Accepted |
+| [0007](0007-email-html-in-sandboxed-native-webview.md) | Render email HTML in a sandboxed native WebView | Accepted |
+| [0008](0008-native-markdown-renderer-for-untrusted-content.md) | Render untrusted Markdown with Markdig into native controls, not a browser | Accepted |
+| [0009](0009-commands-never-rethrow-cancellation.md) | Page commands absorb superseded cancellations and report all others | Accepted |
 
 ## Format
 

@@ -66,10 +66,18 @@ internal sealed class FakeAzureDevOpsService(FakeAzureDevOpsConnection connectio
         => new(workItemId, "Item " + workItemId, "https://dev.azure.com/cegid/Alpha/_workitems/edit/" + workItemId, commentId,
             "Bob", new DateTime(2026, 9, 24, 9, 0, 0, DateTimeKind.Utc), "@Jane Doe have a look");
 
-    public Task<IReadOnlyList<PullRequestItem>> GetMyPullRequestsAsync(CancellationToken ct = default)
+    /// <summary>When set, pull-request fetches wait for this gate or for cancellation (to simulate a slow load).</summary>
+    public TaskCompletionSource? PullRequestsGate { get; set; }
+
+    public async Task<IReadOnlyList<PullRequestItem>> GetMyPullRequestsAsync(CancellationToken ct = default)
     {
         ThrowIfFailing();
-        return Task.FromResult<IReadOnlyList<PullRequestItem>>([.. PullRequests]);
+        if (PullRequestsGate is { } gate)
+        {
+            await gate.Task.WaitAsync(ct);
+        }
+
+        return [.. PullRequests];
     }
 
     public Task<IReadOnlyList<WorkItem>> GetMyWorkItemsAsync(CancellationToken ct = default)

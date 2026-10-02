@@ -1,5 +1,11 @@
+using MyWorkHub.Core.Features.AzureDevOps;
+using MyWorkHub.Core.Features.Calendar;
+using MyWorkHub.Core.Features.Email;
+using MyWorkHub.Core.Features.Teams;
+using MyWorkHub.Core.Features.Todo;
 using MyWorkHub.Core.Modules;
 using MyWorkHub.Core.Navigation;
+using MyWorkHub.Presentation.Navigation;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace MyWorkHub.Presentation.Features.Dashboard;
@@ -16,6 +22,13 @@ public sealed class DashboardPresentationModule : IPresentationModule
     public void RegisterServices(IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
-        services.AddTransient<DashboardViewModel>();
+        services.AddTransient<DashboardViewModel>(sp => new DashboardViewModel(
+            sp.GetService<IEmailService>(),
+            sp.GetService<ITeamsService>(),
+            sp.GetService<IAzureDevOpsService>(),
+            sp.GetService<ITodoRepository>(),
+            sp.GetService<ICalendarService>(),
+            sp.GetRequiredService<INavigationService>()
+        ));
     }
 }

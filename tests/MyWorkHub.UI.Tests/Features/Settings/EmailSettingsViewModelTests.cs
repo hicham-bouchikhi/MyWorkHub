@@ -95,4 +95,49 @@ public sealed class EmailSettingsViewModelTests
     {
         Assert.False(new EmailSettingsViewModel().IsAvailable);
     }
+
+    [Fact]
+    public async Task Should_explain_when_microsoft_365_is_not_available()
+    {
+        var viewModel = new EmailSettingsViewModel(_settings);
+        viewModel.Load();
+
+        await viewModel.LoadFoldersCommand.ExecuteAsync(null);
+
+        Assert.Empty(viewModel.Folders);
+        Assert.Contains("not available", viewModel.FolderNotice, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Should_explain_when_the_folders_cannot_be_read()
+    {
+        _email.FoldersFailure = new InvalidOperationException("offline");
+
+        var viewModel = await LoadedAsync();
+
+        Assert.Contains("offline", viewModel.FolderNotice, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Should_say_favorites_falls_back_to_the_inbox_when_nothing_is_ticked()
+    {
+        var viewModel = await LoadedAsync();
+        viewModel.Folders[0].IsChecked = false;
+
+        await viewModel.SaveCommand.ExecuteAsync(null);
+
+        Assert.Empty(Assert.IsType<EmailSettings>(Assert.Single(_settings.Saves)).FolderIds);
+        Assert.Contains("inbox", viewModel.StatusMessage, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Should_clamp_the_limit_when_saving()
+    {
+        var viewModel = await LoadedAsync();
+        viewModel.MaxPerFolder = 1000;
+
+        await viewModel.SaveCommand.ExecuteAsync(null);
+
+        Assert.Equal(EmailSettings.PerFolderMax, Assert.IsType<EmailSettings>(Assert.Single(_settings.Saves)).MaxPerFolder);
+    }
 }

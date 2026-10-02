@@ -101,9 +101,20 @@ internal sealed class FakeEmailService(FakeGraphConnection connection, params Em
     /// <summary>Messages per folder id for <see cref="GetFolderEmailsAsync"/>.</summary>
     public Dictionary<string, List<EmailItem>> FolderEmails { get; } = [];
 
+    /// <summary>When set, the folder-tree call throws it.</summary>
+    public Exception? FoldersFailure { get; set; }
+
+    /// <summary>When set, single-folder listings throw it.</summary>
+    public Exception? FolderEmailsFailure { get; set; }
+
     public Task<IReadOnlyList<MailFolderNode>> GetFoldersAsync(CancellationToken ct = default)
     {
         connection.ThrowIfSignedOut();
+        if (FoldersFailure is not null)
+        {
+            throw FoldersFailure;
+        }
+
         return Task.FromResult<IReadOnlyList<MailFolderNode>>([.. Folders]);
     }
 
@@ -127,6 +138,11 @@ internal sealed class FakeEmailService(FakeGraphConnection connection, params Em
     public Task<IReadOnlyList<EmailItem>> GetFolderEmailsAsync(string folderId, CancellationToken ct = default)
     {
         connection.ThrowIfSignedOut();
+        if (FolderEmailsFailure is not null)
+        {
+            throw FolderEmailsFailure;
+        }
+
         return Task.FromResult<IReadOnlyList<EmailItem>>(FolderEmails.TryGetValue(folderId, out var list) ? [.. list] : []);
     }
 }

@@ -211,4 +211,33 @@ public sealed class PullRequestsViewModelTests
         Assert.Equal(typeof(PullRequestsViewModel), target.ViewModelType);
         Assert.Equal("1234", target.ElementId);
     }
+
+    // --- Cancellation ----------------------------------------------------------------------
+
+    [Fact]
+    public async Task Should_not_fault_when_a_running_load_is_superseded_by_a_new_one()
+    {
+        _azureDevOps.PullRequests.Add(FakeAzureDevOpsService.PullRequest(1));
+        _azureDevOps.PullRequestsGate = new TaskCompletionSource();
+        var viewModel = Create();
+
+        var first = viewModel.RefreshCommand.ExecuteAsync(null);
+        _azureDevOps.PullRequestsGate = null;
+        await viewModel.RefreshCommand.ExecuteAsync(null);
+        await first;
+
+        Assert.Equal([1], viewModel.Items.Select(r => r.Id));
+        Assert.Null(viewModel.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task Should_show_an_error_when_a_library_cancels_on_its_own()
+    {
+        _azureDevOps.Failure = new TaskCanceledException("timed out");
+        var viewModel = Create();
+
+        await viewModel.RefreshCommand.ExecuteAsync(null);
+
+        Assert.Contains("timed out", viewModel.ErrorMessage, StringComparison.Ordinal);
+    }
 }

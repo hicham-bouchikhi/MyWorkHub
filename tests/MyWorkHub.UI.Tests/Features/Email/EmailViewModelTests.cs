@@ -246,4 +246,18 @@ public sealed class EmailViewModelTests
         Assert.Equal(["a"], viewModel.Items.Select(r => r.Id));
         Assert.Null(viewModel.ErrorMessage);
     }
+
+    [Fact]
+    public async Task Should_show_an_error_when_a_library_cancels_on_its_own()
+    {
+        // e.g. MSAL's cache read or an HttpClient timeout: our token was never cancelled.
+        var connection = new FakeGraphConnection();
+        var email = new FakeEmailService(connection, FakeEmailService.Item("a")) { Failure = new TaskCanceledException("timed out") };
+        var viewModel = new EmailViewModel(email, connection);
+
+        await viewModel.RefreshCommand.ExecuteAsync(null);
+
+        Assert.Contains("timed out", viewModel.ErrorMessage, StringComparison.Ordinal);
+        Assert.False(viewModel.IsBusy);
+    }
 }

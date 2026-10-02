@@ -110,4 +110,78 @@ public sealed class EmailReaderTests
 
         Assert.Equal(["p1", "p2"], viewModel.Items.Select(r => r.Id));
     }
+
+    [Fact]
+    public async Task Should_keep_the_selected_folder_and_expanded_branches_across_a_refresh()
+    {
+        var email = new FakeEmailService(_connection);
+        email.Folders.Add(new MailFolderNode("inbox-id", "Inbox", 0, [new MailFolderNode("azdo-id", "Azure DevOps", 0, [])]));
+        email.FolderEmails["azdo-id"] = [FakeEmailService.Item("p1")];
+        var viewModel = await LoadedAsync(email);
+        viewModel.Folders[0].IsExpanded = true;
+        viewModel.SelectedFolder = viewModel.Folders[0].Children[0];
+        await viewModel.LoadFolderCommand.ExecutionTask!;
+
+        await viewModel.RefreshCommand.ExecuteAsync(null);
+
+        Assert.True(viewModel.Folders[0].IsExpanded);
+        Assert.Equal("azdo-id", viewModel.SelectedFolder?.Id);
+        Assert.Equal(["p1"], viewModel.Items.Select(r => r.Id));
+    }
+
+    [Fact]
+    public async Task Should_switch_back_to_favorites_to_reveal_a_deep_linked_message()
+    {
+        _settings.Email = _settings.Email with { ShowFavorites = true };
+        var email = new FakeEmailService(_connection, FakeEmailService.Item("target"));
+        email.Folders.Add(new MailFolderNode("azdo-id", "Azure DevOps", 0, []));
+        var viewModel = await LoadedAsync(email);
+        viewModel.SelectedFolder = viewModel.Folders[1];
+        await viewModel.LoadFolderCommand.ExecutionTask!;
+
+        viewModel.FocusElement("target");
+        await viewModel.LoadFolderCommand.ExecutionTask!;
+
+        Assert.Same(viewModel.Folders[0], viewModel.SelectedFolder);
+        Assert.Equal("target", viewModel.SelectedItem?.Id);
+        Assert.Equal("target", viewModel.HighlightedItem?.Id);
+    }
+
+    [Fact]
+    public async Task Should_still_list_messages_when_the_folder_tree_cannot_be_read()
+    {
+        var email = new FakeEmailService(_connection, FakeEmailService.Item("w")) { FoldersFailure = new InvalidOperationException("boom") };
+
+        var viewModel = await LoadedAsync(email);
+
+        Assert.Empty(viewModel.Folders);
+        Assert.Equal(["w"], viewModel.Items.Select(r => r.Id));
+        Assert.Null(viewModel.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task Should_show_an_error_when_a_folder_cannot_be_listed()
+    {
+        var email = new FakeEmailService(_connection);
+        email.Folders.Add(new MailFolderNode("inbox-id", "Inbox", 0, []));
+        email.Folders.Add(new MailFolderNode("sent-id", "Sent Items", 0, []));
+        var viewModel = await LoadedAsync(email);
+        email.FolderEmailsFailure = new InvalidOperationException("folder gone");
+
+        viewModel.SelectedFolder = viewModel.Folders[1];
+        await viewModel.LoadFolderCommand.ExecutionTask!;
+
+        Assert.Contains("folder gone", viewModel.ErrorMessage, StringComparison.Ordinal);
+        Assert.False(viewModel.IsBusy);
+    }
+
+    [Fact]
+    public void Should_show_an_unread_count_only_when_there_is_something_unread()
+    {
+        var folder = MailFolderViewModel.From(new MailFolderNode("a", "A", 0, [new MailFolderNode("b", "B", 12, [])]));
+
+        Assert.Equal("", folder.UnreadText);
+        Assert.Equal("12", folder.Children[0].UnreadText);
+        Assert.Equal(["a", "b"], folder.SelfAndDescendants().Select(f => f.Id));
+    }
 }

@@ -9,6 +9,7 @@ namespace MyWorkHub.UI.Features.Email;
 
 public partial class EmailView : UserControl
 {
+    private readonly ReaderNavigationGuard _navigation = new();
     private EmailViewModel? _viewModel;
 
     public EmailView()
@@ -57,6 +58,7 @@ public partial class EmailView : UserControl
     {
         if (_viewModel is not null)
         {
+            _navigation.ExpectDocument();
             Reader.NavigateToString(_viewModel.SelectedDocument);
         }
     }
@@ -79,17 +81,21 @@ public partial class EmailView : UserControl
         }
     }
 
-    // The pane only ever shows the document we gave it (about:/data: — including in-page #anchors). Every
-    // other navigation is cancelled; a followed web or mail link goes to the default browser instead.
+    // The pane only ever shows the document we gave it (see ReaderNavigationGuard); a followed web or mail link
+    // goes to the default browser instead.
     private void OnReaderNavigationStarted(object? sender, WebViewNavigationStartingEventArgs e)
     {
-        if (e.Request is not { IsAbsoluteUri: true } request || request.Scheme is "about" or "data")
+        var decision = _navigation.Decide(e.Request);
+        if (decision == ReaderNavigation.ALLOW)
         {
             return;
         }
 
         e.Cancel = true;
-        _viewModel?.OpenLink(request);
+        if (decision == ReaderNavigation.OPEN_EXTERNALLY)
+        {
+            _viewModel?.OpenLink(e.Request!);
+        }
     }
 
     private void OnReaderNewWindowRequested(object? sender, WebViewNewWindowRequestedEventArgs e)

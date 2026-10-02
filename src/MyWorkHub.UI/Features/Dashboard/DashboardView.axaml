@@ -3,12 +3,219 @@
              xmlns:vm="using:MyWorkHub.Presentation.Features.Dashboard"
              x:Class="MyWorkHub.UI.Features.Dashboard.DashboardView"
              x:DataType="vm:DashboardViewModel">
+    <ScrollViewer>
+        <StackPanel Margin="24" Spacing="24">
+            <!-- Title -->
+            <TextBlock Text="{Binding Title}"
+                       FontSize="24"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource AppTextBrush}" />
 
-    <StackPanel Margin="24" Spacing="8">
-        <TextBlock Text="{Binding Title}"
-                   FontSize="24"
-                   FontWeight="SemiBold" />
-        <TextBlock Text="Pick a section from the sidebar."
-                   Foreground="{DynamicResource AppTextMutedBrush}" />
-    </StackPanel>
+            <!-- Loading state -->
+            <ProgressBar IsIndeterminate="True"
+                         IsVisible="{Binding IsBusy}"
+                         Height="2"
+                         MinHeight="2"
+                         Margin="0,8,0,16" />
+
+            <!-- Error banner -->
+            <Border IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                    Background="{DynamicResource AppDangerBrush}"
+                    CornerRadius="4"
+                    Padding="16">
+                <TextBlock Text="{Binding ErrorMessage}"
+                           Foreground="White"
+                           TextWrapping="Wrap" />
+            </Border>
+
+            <!-- Stats tiles (responsive grid) -->
+            <WrapPanel ItemSpacing="16" LineSpacing="16">
+                <!-- Email tile -->
+                <Button Command="{Binding NavigateToEmailCommand}"
+                        IsVisible="{Binding EmailStats, Converter={x:Static ObjectConverters.IsNotNull}}"
+                        Padding="0"
+                        Background="Transparent"
+                        BorderThickness="0">
+                    <Border Background="{DynamicResource AppSurfaceBrush}"
+                            BorderBrush="{DynamicResource AppBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="16"
+                            MinWidth="180"
+                            MinHeight="120">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="📧" FontSize="28" />
+                            <TextBlock Text="Unread Emails"
+                                       Foreground="{DynamicResource AppTextMutedBrush}"
+                                       FontSize="11" />
+                            <TextBlock Text="{Binding EmailStats.UnreadCount}"
+                                       FontSize="32"
+                                       FontWeight="Bold"
+                                       Foreground="{DynamicResource AppTextBrush}" />
+                        </StackPanel>
+                    </Border>
+                </Button>
+
+                <!-- Teams tile -->
+                <Button Command="{Binding NavigateToTeamsCommand}"
+                        IsVisible="{Binding TeamsStats, Converter={x:Static ObjectConverters.IsNotNull}}"
+                        Padding="0"
+                        Background="Transparent"
+                        BorderThickness="0">
+                    <Border Background="{DynamicResource AppSurfaceBrush}"
+                            BorderBrush="{DynamicResource AppBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="16"
+                            MinWidth="180"
+                            MinHeight="120">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="💬" FontSize="28" />
+                            <TextBlock Text="Unread Chats"
+                                       Foreground="{DynamicResource AppTextMutedBrush}"
+                                       FontSize="11" />
+                            <TextBlock Text="{Binding TeamsStats.UnreadCount}"
+                                       FontSize="32"
+                                       FontWeight="Bold"
+                                       Foreground="{DynamicResource AppTextBrush}" />
+                        </StackPanel>
+                    </Border>
+                </Button>
+
+                <!-- Pull Requests tile -->
+                <Button Command="{Binding NavigateToPullRequestsCommand}"
+                        IsVisible="{Binding AzureDevOpsStats, Converter={x:Static ObjectConverters.IsNotNull}}"
+                        Padding="0"
+                        Background="Transparent"
+                        BorderThickness="0">
+                    <Border Background="{DynamicResource AppSurfaceBrush}"
+                            BorderBrush="{DynamicResource AppBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="16"
+                            MinWidth="180"
+                            MinHeight="120">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="🔀" FontSize="28" />
+                            <TextBlock Text="Pull Requests"
+                                       Foreground="{DynamicResource AppTextMutedBrush}"
+                                       FontSize="11" />
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding AzureDevOpsStats.PullRequestCount}"
+                                               FontSize="24"
+                                               FontWeight="Bold"
+                                               Foreground="{DynamicResource AppTextBrush}" />
+                                    <TextBlock Text="total"
+                                               Foreground="{DynamicResource AppTextMutedBrush}"
+                                               FontSize="9" />
+                                </StackPanel>
+                                <TextBlock Text="/"
+                                           VerticalAlignment="Center"
+                                           Foreground="{DynamicResource AppTextMutedBrush}" />
+                                <StackPanel>
+                                    <TextBlock Text="{Binding AzureDevOpsStats.PendingReviewCount}"
+                                               FontSize="24"
+                                               FontWeight="Bold"
+                                               Foreground="{DynamicResource AppTextBrush}" />
+                                    <TextBlock Text="review"
+                                               Foreground="{DynamicResource AppTextMutedBrush}"
+                                               FontSize="9" />
+                                </StackPanel>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Button>
+
+                <!-- Work Items tile -->
+                <Button Command="{Binding NavigateToWorkItemsCommand}"
+                        IsVisible="{Binding AzureDevOpsStats, Converter={x:Static ObjectConverters.IsNotNull}}"
+                        Padding="0"
+                        Background="Transparent"
+                        BorderThickness="0">
+                    <Border Background="{DynamicResource AppSurfaceBrush}"
+                            BorderBrush="{DynamicResource AppBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="16"
+                            MinWidth="180"
+                            MinHeight="120">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="📋" FontSize="28" />
+                            <TextBlock Text="Work Items"
+                                       Foreground="{DynamicResource AppTextMutedBrush}"
+                                       FontSize="11" />
+                            <TextBlock Text="{Binding AzureDevOpsStats.WorkItemCount}"
+                                       FontSize="32"
+                                       FontWeight="Bold"
+                                       Foreground="{DynamicResource AppTextBrush}" />
+                        </StackPanel>
+                    </Border>
+                </Button>
+
+                <!-- Todo tile -->
+                <Button Command="{Binding NavigateToTodoCommand}"
+                        IsVisible="{Binding TodoStats, Converter={x:Static ObjectConverters.IsNotNull}}"
+                        Padding="0"
+                        Background="Transparent"
+                        BorderThickness="0">
+                    <Border Background="{DynamicResource AppSurfaceBrush}"
+                            BorderBrush="{DynamicResource AppBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="16"
+                            MinWidth="180"
+                            MinHeight="120">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="✓" FontSize="28" />
+                            <TextBlock Text="Todos"
+                                       Foreground="{DynamicResource AppTextMutedBrush}"
+                                       FontSize="11" />
+                            <StackPanel>
+                                <TextBlock Foreground="{DynamicResource AppTextBrush}"
+                                           FontSize="24"
+                                           FontWeight="Bold">
+                                    <Run Text="{Binding TodoStats.CompletedCount}" /><Run Text="/" /><Run Text="{Binding TodoStats.TotalCount}" />
+                                </TextBlock>
+                                <TextBlock Text="completed"
+                                           Foreground="{DynamicResource AppTextMutedBrush}"
+                                           FontSize="9" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Button>
+
+                <!-- Calendar tile -->
+                <Button Command="{Binding NavigateToCalendarCommand}"
+                        IsVisible="{Binding CalendarStats, Converter={x:Static ObjectConverters.IsNotNull}}"
+                        Padding="0"
+                        Background="Transparent"
+                        BorderThickness="0">
+                    <Border Background="{DynamicResource AppSurfaceBrush}"
+                            BorderBrush="{DynamicResource AppBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="16"
+                            MinWidth="180"
+                            MinHeight="120">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="📅" FontSize="28" />
+                            <TextBlock Text="Upcoming"
+                                       Foreground="{DynamicResource AppTextMutedBrush}"
+                                       FontSize="11" />
+                            <StackPanel>
+                                <TextBlock Text="{Binding CalendarStats.UpcomingCount}"
+                                           FontSize="32"
+                                           FontWeight="Bold"
+                                           Foreground="{DynamicResource AppTextBrush}" />
+                                <TextBlock Text="events"
+                                           Foreground="{DynamicResource AppTextMutedBrush}"
+                                           FontSize="9" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Button>
+            </WrapPanel>
+        </StackPanel>
+    </ScrollViewer>
 </UserControl>

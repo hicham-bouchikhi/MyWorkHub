@@ -53,8 +53,12 @@ public sealed class SettingsPageTests
         settings.Appearance = new AppearanceSettings("Dark", "OneDark");
         settings.Workspace = new WorkspaceSettings("claude", "/clones", "m", "");
         settings.AzureDevOps = new AzureDevOpsSettings("https://dev.azure.com/acme/", ["Alpha"]);
+        settings.Email = new EmailSettings(["inbox"], 40, ShowFavorites: true);
 
         page.LoadCommand.Execute(null);
+
+        Assert.Equal(40, page.Email.MaxPerFolder);
+        Assert.True(page.Email.ShowFavorites);
 
         Assert.Equal("OneDark", page.Appearance.SelectedPalette);
         Assert.Equal("/clones", page.Workspace.WorkFolderPath);
