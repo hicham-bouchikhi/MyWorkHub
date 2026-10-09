@@ -32,14 +32,17 @@ internal sealed class Program
         }
     }
 
-    // The email reader's WebKitGTK paints an empty pane with accelerated compositing on NVIDIA drivers under
-    // Wayland/XWayland. It must be in the *native* environment before WebKit starts (WebKit reads it with getenv and
-    // its web process inherits it): on Unix, Environment.SetEnvironmentVariable only updates .NET's own copy, so
-    // libc setenv is called instead. A value the user exported wins (overwrite = 0).
+    // The email reader's WebKitGTK paints an empty pane on NVIDIA drivers under Wayland/XWayland: its DMABUF
+    // buffer allocation fails ("Failed to create GBM buffer ... Invalid argument") and nothing is drawn. Disabling
+    // the DMABUF renderer fixes it; accelerated compositing is also disabled as before. They must be in the *native*
+    // environment before WebKit starts (WebKit reads them with getenv and its web process inherits them): on Unix,
+    // Environment.SetEnvironmentVariable only updates .NET's own copy, so libc setenv is called instead. A value the
+    // user exported wins (overwrite = 0).
     private static void ConfigureWebKit()
     {
         if (OperatingSystem.IsLinux())
         {
+            _ = NativeMethods.setenv("WEBKIT_DISABLE_DMABUF_RENDERER", "1", overwrite: 0);
             _ = NativeMethods.setenv("WEBKIT_DISABLE_COMPOSITING_MODE", "1", overwrite: 0);
         }
     }

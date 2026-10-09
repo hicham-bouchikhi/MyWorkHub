@@ -51,6 +51,7 @@ internal sealed partial class MsalAuthenticator : IMsalAuthenticator, IDisposabl
         var account = await GetCachedAccountAsync(ct).ConfigureAwait(false);
         if (account is null)
         {
+            LogNoCachedAccount();
             return null;
         }
 
@@ -61,9 +62,10 @@ internal sealed partial class MsalAuthenticator : IMsalAuthenticator, IDisposabl
                 .ConfigureAwait(false);
             return result.AccessToken;
         }
-        catch (MsalUiRequiredException)
+        catch (MsalUiRequiredException ex)
         {
             // Refresh token expired/revoked or new consent needed: only an explicit sign-in can fix it.
+            LogSilentTokenNeedsSignIn(ex.ErrorCode);
             return null;
         }
     }
@@ -71,21 +73,26 @@ internal sealed partial class MsalAuthenticator : IMsalAuthenticator, IDisposabl
     public async Task<string> AcquireTokenInteractiveAsync(CancellationToken ct = default)
     {
         var app = await GetAppAsync(ct).ConfigureAwait(false);
+        LogInteractiveSignInStarted();
         var result = await app.AcquireTokenInteractive(GraphScopes.Delegated)
             .WithUseEmbeddedWebView(false)
             .ExecuteAsync(ct)
             .ConfigureAwait(false);
+        LogInteractiveSignInCompleted();
         return result.Account?.Username ?? "";
     }
 
     public async Task SignOutAsync(CancellationToken ct = default)
     {
         var app = await GetAppAsync(ct).ConfigureAwait(false);
+        var removed = 0;
         foreach (var account in await app.GetAccountsAsync().ConfigureAwait(false))
         {
             ct.ThrowIfCancellationRequested();
             await app.RemoveAsync(account).ConfigureAwait(false);
+            removed++;
         }
+        LogSignedOut(removed);
     }
 
     public void Dispose() => _initGate.Dispose();
@@ -166,4 +173,19 @@ internal sealed partial class MsalAuthenticator : IMsalAuthenticator, IDisposabl
     [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Warning,
         Message = "The Microsoft 365 token cache cannot be stored securely on this machine; sign-in will last for this session only.")]
     private partial void LogCacheNotPersisted(Exception exception);
+
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Debug, Message = "No cached Microsoft 365 account; sign-in is required.")]
+    private partial void LogNoCachedAccount();
+
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Debug, Message = "Silent Microsoft 365 token refresh needs an interactive sign-in ({ErrorCode}).")]
+    private partial void LogSilentTokenNeedsSignIn(string? errorCode);
+
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Debug, Message = "Starting interactive Microsoft 365 sign-in in the system browser.")]
+    private partial void LogInteractiveSignInStarted();
+
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Debug, Message = "Interactive Microsoft 365 sign-in completed.")]
+    private partial void LogInteractiveSignInCompleted();
+
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Debug, Message = "Microsoft 365 sign-out removed {Count} cached account(s).")]
+    private partial void LogSignedOut(int count);
 }

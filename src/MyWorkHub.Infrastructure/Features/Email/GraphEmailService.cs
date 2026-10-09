@@ -83,6 +83,7 @@ internal sealed partial class GraphEmailService : IEmailService
     public async Task<string> GetEmailHtmlAsync(string id, CancellationToken ct = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
+        LogEmailOpened(id);
 
         var messageRequest = _graph.Me.Messages[id];
         var message = await messageRequest.GetAsync(
@@ -209,4 +210,7 @@ internal sealed partial class GraphEmailService : IEmailService
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Watched mail folder '{FolderId}' does not exist; skipping it.")]
     private partial void LogFolderNotFound(string folderId, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Opened email {EmailId}.")]
+    private partial void LogEmailOpened(string emailId);
 }

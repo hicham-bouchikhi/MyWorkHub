@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Graph.Models;
 using Microsoft.Kiota.Abstractions;
 using MyWorkHub.Core.Features.Automations;
@@ -52,7 +53,7 @@ internal sealed class SiteAutomationFixture
     public static TimeProvider Clock { get; } = new UtcClock();
 
     public SiteScriptRunner Runner()
-        => new(Browser, Credentials, new AutomationPaths(DOWNLOADS, SCREENSHOTS), Clock);
+        => new(Browser, Credentials, new AutomationPaths(DOWNLOADS, SCREENSHOTS), Clock, NullLogger<SiteScriptRunner>.Instance);
 
     /// <summary>A Graph adapter answering calendar reads with <paramref name="events"/> and echoing writes.</summary>
     public static FakeGraphRequestAdapter Graph(params Event[] events)

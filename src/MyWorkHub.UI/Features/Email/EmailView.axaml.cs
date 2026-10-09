@@ -17,7 +17,11 @@ public partial class EmailView : UserControl
         InitializeComponent();
 
         Reader.EnvironmentRequested += OnReaderEnvironmentRequested;
-        Reader.AdapterCreated += (_, _) => ShowDocument();
+        Reader.AdapterCreated += (_, _) =>
+        {
+            _viewModel?.TraceReader("WebView adapter created");
+            ShowDocument();
+        };
         Reader.NavigationStarted += OnReaderNavigationStarted;
         Reader.NewWindowRequested += OnReaderNewWindowRequested;
     }
@@ -59,13 +63,15 @@ public partial class EmailView : UserControl
         if (_viewModel is not null)
         {
             _navigation.ExpectDocument();
+            _viewModel.TraceReader($"showing message document ({_viewModel.SelectedDocument.Length} chars)");
             Reader.NavigateToString(_viewModel.SelectedDocument);
         }
     }
 
     // No cookies, cache or storage survive the session: nothing a message does is remembered.
-    private static void OnReaderEnvironmentRequested(object? sender, WebViewEnvironmentRequestedEventArgs e)
+    private void OnReaderEnvironmentRequested(object? sender, WebViewEnvironmentRequestedEventArgs e)
     {
+        _viewModel?.TraceReader($"WebView environment requested ({e.GetType().Name})");
         switch (e)
         {
             case WindowsWebView2EnvironmentRequestedEventArgs webView2:
@@ -86,6 +92,7 @@ public partial class EmailView : UserControl
     private void OnReaderNavigationStarted(object? sender, WebViewNavigationStartingEventArgs e)
     {
         var decision = _navigation.Decide(e.Request);
+        _viewModel?.TraceReader($"navigation {decision} ({e.Request?.Scheme ?? "no url"})");
         if (decision == ReaderNavigation.ALLOW)
         {
             return;

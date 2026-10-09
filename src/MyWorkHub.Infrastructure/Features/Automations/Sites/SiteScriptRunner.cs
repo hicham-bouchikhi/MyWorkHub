@@ -1,4 +1,5 @@
 using System.Globalization;
+using Microsoft.Extensions.Logging;
 using MyWorkHub.Core.Features.Automations;
 using MyWorkHub.Infrastructure.Features.Automations.Browser;
 
@@ -15,7 +16,7 @@ internal sealed record AutomationPaths(string DownloadsDirectory, string Screens
 /// browser part fails, a screenshot of the page is saved and its path added to the error, so a failed run
 /// in the history can be diagnosed (e.g. a site whose layout changed).
 /// </summary>
-internal sealed class SiteScriptRunner
+internal sealed partial class SiteScriptRunner
 {
     private const string SCREENSHOT_TIMESTAMP_FORMAT = "yyyyMMdd-HHmmss";
 
@@ -23,21 +24,25 @@ internal sealed class SiteScriptRunner
     private readonly IAutomationCredentialService _credentials;
     private readonly AutomationPaths _paths;
     private readonly TimeProvider _timeProvider;
+    private readonly ILogger<SiteScriptRunner> _logger;
 
     public SiteScriptRunner(
         IBrowserService browser,
         IAutomationCredentialService credentials,
         AutomationPaths paths,
-        TimeProvider timeProvider)
+        TimeProvider timeProvider,
+        ILogger<SiteScriptRunner> logger)
     {
         ArgumentNullException.ThrowIfNull(browser);
         ArgumentNullException.ThrowIfNull(credentials);
         ArgumentNullException.ThrowIfNull(paths);
         ArgumentNullException.ThrowIfNull(timeProvider);
+        ArgumentNullException.ThrowIfNull(logger);
         _browser = browser;
         _credentials = credentials;
         _paths = paths;
         _timeProvider = timeProvider;
+        _logger = logger;
     }
 
     /// <summary>
@@ -63,15 +68,18 @@ internal sealed class SiteScriptRunner
         {
             try
             {
+                LogSigningIn(site.DisplayName);
                 await session.GoToAsync(url, ct).ConfigureAwait(false);
                 await session.FillAsync(userNameField, login.UserName, ct).ConfigureAwait(false);
                 await session.FillAsync(passwordField, login.Password, ct).ConfigureAwait(false);
                 await session.ClickAsync(loginButton, ct).ConfigureAwait(false);
+                LogSignedIn(site.DisplayName);
 
                 return await script(session).ConfigureAwait(false);
             }
             catch (Exception ex) when (ex is not OperationCanceledException and not AutomationException)
             {
+                LogSignInFailed(site.DisplayName, ex);
                 var screenshot = await TryCaptureScreenshotAsync(session, site).ConfigureAwait(false);
                 var hint = screenshot is null ? "" : $" A screenshot of the page was saved to {screenshot}.";
                 throw new AutomationException($"{site.DisplayName}: {ex.Message}{hint}", ex);
@@ -94,4 +102,13 @@ internal sealed class SiteScriptRunner
             return null;
         }
     }
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Signing in to {Site}.")]
+    private partial void LogSigningIn(string site);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Submitted the login form for {Site}.")]
+    private partial void LogSignedIn(string site);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Sign-in to {Site} failed.")]
+    private partial void LogSignInFailed(string site, Exception exception);
 }

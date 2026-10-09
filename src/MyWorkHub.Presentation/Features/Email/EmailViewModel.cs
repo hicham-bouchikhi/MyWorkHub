@@ -2,6 +2,8 @@ using MyWorkHub.Core.Abstractions;
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using MyWorkHub.Core.Features.Email;
 using MyWorkHub.Core.Features.EmailSummary;
 using MyWorkHub.Core.Features.GraphAuth;
@@ -33,6 +35,7 @@ public sealed partial class EmailViewModel : GraphPageViewModel, IDeepLinkTarget
     private readonly IEmailSummaryService? _summary;
     private readonly IBrowserLauncher? _browser;
     private readonly ISettingsService? _settings;
+    private readonly ILogger<EmailViewModel> _logger;
     private readonly MailFolderViewModel _favorites = MailFolderViewModel.Favorites();
     private bool _isRebuildingFolders;
     private IReadOnlyList<EmailItem> _emails = [];
@@ -46,13 +49,15 @@ public sealed partial class EmailViewModel : GraphPageViewModel, IDeepLinkTarget
         IGraphConnectionService? connection = null,
         IEmailSummaryService? summary = null,
         IBrowserLauncher? browser = null,
-        ISettingsService? settings = null)
+        ISettingsService? settings = null,
+        ILogger<EmailViewModel>? logger = null)
         : base("Email", email is not null, connection)
     {
         _email = email;
         _summary = summary;
         _browser = browser;
         _settings = settings;
+        _logger = logger ?? NullLogger<EmailViewModel>.Instance;
 
         // Until the tree loads (or if it cannot), the merged Favorites list is what is shown.
         _selectedFolder = _favorites;
@@ -141,6 +146,12 @@ public sealed partial class EmailViewModel : GraphPageViewModel, IDeepLinkTarget
     /// Opens a link the user followed in the reading pane in the default browser. Only web and mail links are
     /// honoured: anything else (file:, javascript:, custom schemes) from untrusted mail is dropped.
     /// </summary>
+    /// <summary>Records what the reading pane's native WebView is doing, for diagnosing its native output.</summary>
+    public void TraceReader(string step) => LogReaderStep(step);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Reading pane: {Step}")]
+    private partial void LogReaderStep(string step);
+
     public void OpenLink(Uri uri)
     {
         ArgumentNullException.ThrowIfNull(uri);

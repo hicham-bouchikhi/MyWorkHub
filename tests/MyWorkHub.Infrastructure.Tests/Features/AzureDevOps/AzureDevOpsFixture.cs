@@ -43,7 +43,7 @@ internal sealed class AzureDevOpsFixture : IDisposable
         Factory = new StubHttpClientFactory(Handler);
         Client = new AzureDevOpsClient(Factory, options, Credentials);
         Service = new AzureDevOpsService(Client, options, NullLogger<AzureDevOpsService>.Instance);
-        Connection = new AzureDevOpsConnectionService(Client, Credentials);
+        Connection = new AzureDevOpsConnectionService(Client, Credentials, NullLogger<AzureDevOpsConnectionService>.Instance);
     }
 
     public StubHttpMessageHandler Handler { get; }

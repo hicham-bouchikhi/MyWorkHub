@@ -68,7 +68,7 @@ public sealed class GraphAuthTests
     [Fact]
     public async Task Should_report_the_account_name_when_interactive_sign_in_succeeds()
     {
-        var service = new GraphConnectionService(new FakeMsalAuthenticator { InteractiveAccountName = "me@cegid.com" });
+        var service = new GraphConnectionService(new FakeMsalAuthenticator { InteractiveAccountName = "me@cegid.com" }, NullLogger<GraphConnectionService>.Instance);
 
         var result = await service.SignInAsync(TestContext.Current.CancellationToken);
 
@@ -82,7 +82,7 @@ public sealed class GraphAuthTests
         var service = new GraphConnectionService(new FakeMsalAuthenticator
         {
             InteractiveFailure = new MsalClientException(MsalError.AuthenticationCanceledError, "closed"),
-        });
+        }, NullLogger<GraphConnectionService>.Instance);
 
         var result = await service.SignInAsync(TestContext.Current.CancellationToken);
 
@@ -96,7 +96,7 @@ public sealed class GraphAuthTests
         var service = new GraphConnectionService(new FakeMsalAuthenticator
         {
             InteractiveFailure = new MsalServiceException("invalid_client", "AADSTS700016: app not found"),
-        });
+        }, NullLogger<GraphConnectionService>.Instance);
 
         var result = await service.SignInAsync(TestContext.Current.CancellationToken);
 
@@ -109,7 +109,7 @@ public sealed class GraphAuthTests
     {
         using var authenticator = new MsalAuthenticator(
             AzureAdOptions.FromConfiguration(Configuration()), NullLogger<MsalAuthenticator>.Instance);
-        var service = new GraphConnectionService(authenticator);
+        var service = new GraphConnectionService(authenticator, NullLogger<GraphConnectionService>.Instance);
 
         var result = await service.SignInAsync(TestContext.Current.CancellationToken);
 
@@ -121,7 +121,7 @@ public sealed class GraphAuthTests
     public async Task Should_forget_the_account_when_signing_out()
     {
         var authenticator = new FakeMsalAuthenticator { AccountName = "me@cegid.com" };
-        var service = new GraphConnectionService(authenticator);
+        var service = new GraphConnectionService(authenticator, NullLogger<GraphConnectionService>.Instance);
 
         await service.SignOutAsync(TestContext.Current.CancellationToken);
 

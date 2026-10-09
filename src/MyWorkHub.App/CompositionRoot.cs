@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using Serilog.Events;
 
 namespace MyWorkHub.App;
 
@@ -130,10 +131,15 @@ internal static class CompositionRoot
 
     private static void ConfigureSerilog()
         => Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Information()
+            .MinimumLevel.Debug()
+            // Framework chatter (EF Core SQL, ASP.NET/Quartz internals) stays at Information; app code logs Debug.
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+            .MinimumLevel.Override("System", LogEventLevel.Information)
             .Enrich.FromLogContext()
+            // Debug events are still created (so they can be switched on later), but the file keeps errors only.
             .WriteTo.File(
                 Path.Combine(AppPaths.LogsDir, "MyWorkHub-.log"),
+                restrictedToMinimumLevel: LogEventLevel.Error,
                 formatProvider: CultureInfo.InvariantCulture,
                 rollingInterval: RollingInterval.Day,
                 retainedFileCountLimit: 31)
