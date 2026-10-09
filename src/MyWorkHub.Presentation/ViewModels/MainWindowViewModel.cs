@@ -15,7 +15,10 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(SidebarWidth))]
     private bool _isSidebarExpanded = true;
 
+    /// <summary>The current sidebar entry (feature list or footer); the top bar shows its label.</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SelectedNavigationItem))]
+    [NotifyPropertyChangedFor(nameof(SelectedFooterItem))]
     private NavigationItem? _selectedItem;
 
     /// <param name="navigation">Page switching for the content area.</param>
@@ -58,11 +61,37 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     /// burger-menu toggle and separated from the scrollable feature list above them.</summary>
     public IReadOnlyList<NavigationItem> FooterItems { get; }
 
+    /// <summary>
+    /// Selection of the <see cref="NavigationItems"/> list box: <see cref="SelectedItem"/> when it is a feature
+    /// entry, otherwise null. The two list boxes cannot share <see cref="SelectedItem"/>: a list box handed an
+    /// entry it does not contain clears its own selection and writes null back, which undid the other list's
+    /// click (Settings, then a feature page, then Settings again stayed on the feature page).
+    /// </summary>
+    public NavigationItem? SelectedNavigationItem
+    {
+        get => SelectedItem is { IsFooter: false } ? SelectedItem : null;
+        set => Select(value);
+    }
+
+    /// <summary>Selection of the <see cref="FooterItems"/> list box; see <see cref="SelectedNavigationItem"/>.</summary>
+    public NavigationItem? SelectedFooterItem
+    {
+        get => SelectedItem is { IsFooter: true } ? SelectedItem : null;
+        set => Select(value);
+    }
+
     /// <summary>Current sidebar width, driven by <see cref="IsSidebarExpanded"/>.</summary>
     public double SidebarWidth => IsSidebarExpanded ? EXPANDED_SIDEBAR_WIDTH : COLLAPSED_SIDEBAR_WIDTH;
 
     [RelayCommand]
     private void ToggleSidebar() => IsSidebarExpanded = !IsSidebarExpanded;
+
+    // A null from a list box only means the current entry lives in the other list — not a choice to act on.
+    private void Select(NavigationItem? item)
+    {
+        if (item is not null)
+            SelectedItem = item;
+    }
 
     partial void OnSelectedItemChanged(NavigationItem? value)
     {

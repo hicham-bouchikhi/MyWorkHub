@@ -199,7 +199,7 @@
                         <Separator Margin="8,4" />
                         <ListBox Classes="nav"
                                  ItemsSource="{Binding FooterItems}"
-                                 SelectedItem="{Binding SelectedItem}"
+                                 SelectedItem="{Binding SelectedFooterItem}"
                                  ItemTemplate="{StaticResource NavItemTemplate}"
                                  Background="Transparent"
                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
@@ -210,7 +210,7 @@
                          fills the remaining space above the docked footer). -->
                     <ListBox Classes="nav"
                              ItemsSource="{Binding NavigationItems}"
-                             SelectedItem="{Binding SelectedItem}"
+                             SelectedItem="{Binding SelectedNavigationItem}"
                              ItemTemplate="{StaticResource NavItemTemplate}"
                              Background="Transparent"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"

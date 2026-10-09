@@ -32,7 +32,7 @@ Tests use **xUnit v3** on the classic VSTest runner (`Microsoft.NET.Test.Sdk` + 
 |---|---|
 | `tests/MyWorkHub.Core.Tests` | Pure Core logic: `ModuleDiscovery`, navigation records, `AppPaths`, `CredentialKeys`, automation plan/outcome rules |
 | `tests/MyWorkHub.Infrastructure.Tests` | Graph services (fake Kiota `IRequestAdapter`), MSAL, AzDO REST (stub `HttpMessageHandler`), EF Core repos (in-memory SQLite), Claude CLI runner / prompts, Playwright sessions (fake browser), process runner |
-| `tests/MyWorkHub.UI.Tests` | Page view models, navigation + deep links, notification center, the real `AddUi()` composition (`ShellCompositionValidator`, `ViewRegistry`), UI-layer logic kept out of code-behind (`ReaderNavigationGuard`) and shared controls (`Controls/Markdown`, built without a running app) |
+| `tests/MyWorkHub.UI.Tests` | Page view models, navigation + deep links, notification center, the real `AddUi()` composition (`ShellCompositionValidator`, `ViewRegistry`), UI-layer logic kept out of code-behind (`ReaderNavigationGuard`) and shared controls (`Controls/Markdown`, built without a running app); `[AvaloniaFact]` tests (Avalonia.Headless, `HeadlessTestApp`) click real views, e.g. the `MainWindow` sidebar in `SidebarNavigationTests` |
 | `tests/MyWorkHub.Automation.Tests` | Quartz jobs (`AutomationJob`, `RemoteWorkSyncJob`, …) and scheduling registration |
 
 ```bash
