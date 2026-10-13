@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MyWorkHub.Core.Features.GraphAuth;
+using MyWorkHub.Presentation.Navigation;
 using MyWorkHub.Presentation.ViewModels;
 
 namespace MyWorkHub.Presentation.Features.GraphAuth;
@@ -11,7 +12,7 @@ namespace MyWorkHub.Presentation.Features.GraphAuth;
 /// sign-in prompt instead of an error. Signing in on one page makes the shared token cache valid for
 /// all of them. Subclasses only fetch and publish their data in <see cref="LoadDataAsync"/>.
 /// </summary>
-public abstract partial class GraphPageViewModel : PageViewModel
+public abstract partial class GraphPageViewModel : PageViewModel, IRefreshablePage
 {
     private readonly IGraphConnectionService? _connection;
     private bool _isLoaded;

@@ -39,6 +39,17 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
+                <TextBlock Text="Delayed: minimize the window (or hide it in the tray) before it fires."
+                           Foreground="{DynamicResource AppTextMutedBrush}"
+                           TextWrapping="Wrap" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <NumericUpDown Value="{Binding DelaySeconds}" Minimum="0" Maximum="3600" Increment="1"
+                                   FormatString="0" Width="140" />
+                    <TextBlock Text="seconds" VerticalAlignment="Center" />
+                    <Button Content="Send after delay" Command="{Binding SendDelayedTestNotificationCommand}" />
+                    <Button Content="Cancel" Command="{Binding SendDelayedTestNotificationCancelCommand}"
+                            IsVisible="{Binding SendDelayedTestNotificationCommand.IsRunning}" />
+                </StackPanel>
             </StackPanel>
 
             <Separator />

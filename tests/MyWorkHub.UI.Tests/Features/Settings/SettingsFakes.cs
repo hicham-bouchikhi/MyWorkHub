@@ -14,6 +14,8 @@ internal sealed class FakeSettingsService : ISettingsService
 
     public EmailSettings Email { get; set; } = new(["inbox"], 25);
 
+    public NotificationSettings Notifications { get; set; } = NotificationSettings.Default;
+
     /// <summary>Every save, as the record passed in, in call order (shared with other fakes via <see cref="Log"/>).</summary>
     public List<object> Saves { get; } = [];
 
@@ -29,6 +31,11 @@ internal sealed class FakeSettingsService : ISettingsService
     public AzureDevOpsSettings GetAzureDevOps() => AzureDevOps;
 
     public EmailSettings GetEmail() => Email;
+
+    public NotificationSettings GetNotifications() => Notifications;
+
+    public Task SaveNotificationsAsync(NotificationSettings settings, CancellationToken ct = default)
+        => Record(settings, () => Notifications = settings);
 
     public Task SaveAppearanceAsync(AppearanceSettings settings, CancellationToken ct = default)
         => Record(settings, () => Appearance = settings);

@@ -14,7 +14,7 @@ internal sealed class FakeNavigationService : INavigationService
 {
     public List<NavigationTarget> Requests { get; } = [];
 
-    public ViewModelBase? CurrentPage { get; private set; }
+    public ViewModelBase? CurrentPage { get; set; }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 

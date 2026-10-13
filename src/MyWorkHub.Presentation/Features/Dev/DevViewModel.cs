@@ -18,6 +18,8 @@ namespace MyWorkHub.Presentation.Features.Dev;
 /// by hand without waiting for a real event.
 /// <list type="bullet">
 /// <item>One informational-only notification per <see cref="NotificationSeverity"/> (no target).</item>
+/// <item>A delayed notification, sent <see cref="DelaySeconds"/> after the click, to check toasts raised while
+/// the window is minimized or hidden in the tray.</item>
 /// <item>One deep-link notification per deep-link target kind (Todo, Email, Pull request, Work item,
 /// Mention). Each looks up a <em>real</em> row through the feature's own service, so clicking the toast
 /// or bell entry must open that page, scroll to the row and flash it. When the service is missing,
@@ -61,6 +63,31 @@ public sealed partial class DevViewModel : PageViewModel
     /// <summary>What the last deep-link button sent (real row or synthetic id, and why).</summary>
     [ObservableProperty]
     private string? _lastResult;
+
+    /// <summary>How long the delayed test waits before notifying, in seconds.</summary>
+    [ObservableProperty]
+    private decimal _delaySeconds = 5;
+
+    [RelayCommand(CanExecute = nameof(CanNotify), IncludeCancelCommand = true)]
+    private async Task SendDelayedTestNotificationAsync(CancellationToken ct)
+    {
+        var delay = TimeSpan.FromSeconds((double)Math.Max(0, DelaySeconds));
+        LastResult = $"Delayed test: notifying in {delay.TotalSeconds:0.#} s…";
+        try
+        {
+            await Task.Delay(delay, ct);
+        }
+        catch (OperationCanceledException)
+        {
+            LastResult = "Delayed test: cancelled.";
+            return;
+        }
+
+        _notifications?.Notify(
+            "Delayed test notification",
+            $"Sent {delay.TotalSeconds:0.#} s after the click. Informational only: clicking it navigates nowhere.");
+        LastResult = "Delayed test: sent.";
+    }
 
     [RelayCommand(CanExecute = nameof(CanNotify))]
     private void SendTestNotification(NotificationSeverity severity)

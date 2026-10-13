@@ -59,6 +59,30 @@ public sealed class DevViewModelTests
         Assert.False(viewModel.SendMentionDeepLinkCommand.CanExecute(null));
     }
 
+    [Fact]
+    public async Task Should_send_the_delayed_test_notification_once_the_delay_has_elapsed()
+    {
+        var viewModel = new DevViewModel(_notifications) { DelaySeconds = 0 };
+
+        await viewModel.SendDelayedTestNotificationCommand.ExecuteAsync(null);
+
+        var sent = Assert.Single(_notifications.Sent);
+        Assert.Equal("Delayed test notification", sent.Title);
+        Assert.Equal(NotificationSeverity.INFORMATION, sent.Severity);
+    }
+
+    [Fact]
+    public async Task Should_not_send_the_delayed_test_notification_when_cancelled_during_the_delay()
+    {
+        var viewModel = new DevViewModel(_notifications) { DelaySeconds = 60 };
+
+        var pending = viewModel.SendDelayedTestNotificationCommand.ExecuteAsync(null);
+        viewModel.SendDelayedTestNotificationCancelCommand.Execute(null);
+        await pending;
+
+        Assert.Empty(_notifications.Sent);
+    }
+
     // --- Deep-link test notifications: real rows ------------------------------------
 
     [Fact]
