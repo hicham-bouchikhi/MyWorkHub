@@ -65,7 +65,7 @@ Install the [Claude CLI](https://claude.ai/download) and log in. If `claude` is 
 
 ## Configuration
 
-Everything lives in `~/.MyWorkHub/appsettings.json` (`%USERPROFILE%\.MyWorkHub\` on Windows) — `src/MyWorkHub.App/appsettings.json` is only the first-run seed. Prefer the **Settings** page: Azure DevOps, Workspace, Email and appearance changes apply immediately. Other sections (`AzureAD`, `Automation` schedules, `ExternalSites`, `UI` refresh/tray options) are read at startup — restart after editing them.
+Everything lives in `~/.MyWorkHub/appsettings.json` (`%USERPROFILE%\.MyWorkHub\` on Windows) — `src/MyWorkHub.App/appsettings.json` is only the first-run seed. Prefer the **Settings** page: Azure DevOps, Workspace, Email, notification and appearance changes apply immediately (notifications from the next check). Other sections (`AzureAD`, `Automation` schedules, `ExternalSites`, `UI:MinimizeToTrayOnClose`) are read at startup — restart after editing them.
 
 ## Build & test
 
