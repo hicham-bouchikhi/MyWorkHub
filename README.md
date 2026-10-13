@@ -97,6 +97,6 @@ The build treats every warning as an error. Pushes to `master` build self-contai
 
 ## Documentation
 
-- [`CLAUDE.md`](CLAUDE.md) — current architecture, conventions and integration details (source of truth together with the code)
+- [`AGENTS.md`](AGENTS.md) — architecture, conventions and integration details (source of truth together with the code)
 - [`docs/adr/`](docs/adr/) — architecture decision records
 - [`docs/prd.md`](docs/prd.md), [`docs/architecture.md`](docs/architecture.md), [`docs/tasks.md`](docs/tasks.md) — pre-rewrite specs, still useful for product intent
