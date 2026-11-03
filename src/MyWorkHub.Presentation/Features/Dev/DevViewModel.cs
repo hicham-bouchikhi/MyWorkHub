@@ -176,7 +176,11 @@ public sealed partial class DevViewModel : PageViewModel
                 sample = await findSample(ct);
                 fallbackReason = "no row is loaded";
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                return; // superseded: the newer execution owns the result
+            }
+            catch (Exception ex)
             {
                 fallbackReason = ex.Message;
             }

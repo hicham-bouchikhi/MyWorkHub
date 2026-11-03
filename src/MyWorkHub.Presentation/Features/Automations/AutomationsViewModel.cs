@@ -97,9 +97,15 @@ public sealed partial class AutomationsViewModel : PageViewModel
             return;
         }
 
+        // A superseded run returns quietly from each step; only a completed one counts as loaded.
         await RefreshAsync(ct);
+        if (ct.IsCancellationRequested)
+        {
+            return;
+        }
+
         await LoadPlanAsync(ct);
-        _isLoaded = true;
+        _isLoaded = !ct.IsCancellationRequested;
     }
 
     /// <summary>Re-reads schedules and run history (e.g. after a queued run finished).</summary>
@@ -132,7 +138,11 @@ public sealed partial class AutomationsViewModel : PageViewModel
 
             ErrorMessage = null;
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return; // superseded: the newer execution owns the page
+        }
+        catch (Exception ex)
         {
             ErrorMessage = $"Could not load the automations: {ex.Message}";
         }
@@ -143,8 +153,12 @@ public sealed partial class AutomationsViewModel : PageViewModel
     }
 
     /// <summary>Queues an immediate run; its outcome shows up in the history (and as a notification) when done.</summary>
+    /// <remarks>
+    /// Takes no CancellationToken: the toolkit cancels the running execution's token on every new execution —
+    /// even a concurrent one for another card — which would drop this card's request silently.
+    /// </remarks>
     [RelayCommand(AllowConcurrentExecutions = true)]
-    private async Task RunNowAsync(AutomationRowViewModel row, CancellationToken ct)
+    private async Task RunNowAsync(AutomationRowViewModel row)
     {
         ArgumentNullException.ThrowIfNull(row);
         if (_scheduler is null)
@@ -154,10 +168,10 @@ public sealed partial class AutomationsViewModel : PageViewModel
 
         try
         {
-            await _scheduler.RunNowAsync(row.Id, ct);
+            await _scheduler.RunNowAsync(row.Id);
             row.RunNowStatus = "Started — you will be notified when it finishes.";
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (Exception ex)
         {
             row.RunNowStatus = $"Could not start: {ex.Message}";
         }
@@ -229,7 +243,11 @@ public sealed partial class AutomationsViewModel : PageViewModel
                 ? "Saved: no remote-work days this month."
                 : $"Saved: {plan.Days.Count} remote-work day(s).";
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return; // superseded: the newer execution owns the page
+        }
+        catch (Exception ex)
         {
             PlanMessage = $"Could not save the plan: {ex.Message}";
         }
@@ -246,7 +264,11 @@ public sealed partial class AutomationsViewModel : PageViewModel
         {
             PlanDaysText = (await _plans.GetAsync(PlanYear, PlanMonth, ct)).FormatDays();
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return; // superseded: the newer execution owns the page
+        }
+        catch (Exception ex)
         {
             PlanMessage = $"Could not load the plan: {ex.Message}";
         }

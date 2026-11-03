@@ -141,6 +141,17 @@ public sealed class WorkspaceSettingsViewModelTests : IDisposable
     }
 
     [Fact]
+    public async Task Should_explain_when_a_library_cancels_the_save_on_its_own()
+    {
+        var vm = Loaded();
+        _settings.Failure = new TaskCanceledException("timed out");
+
+        await vm.SaveCommand.ExecuteAsync(Ct);
+
+        Assert.Contains("timed out", vm.ErrorMessage, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Should_disable_saving_and_browsing_when_their_services_are_missing()
     {
         var vm = new WorkspaceSettingsViewModel();

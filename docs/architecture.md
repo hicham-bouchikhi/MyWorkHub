@@ -1,519 +1,188 @@
-# MyWorkHub — Architecture Document
+# MyWorkHub — Architecture
 
-**Version:** 1.0  
-**Date:** 2026-06-22  
-**Status:** Approved — ready for implementation
-
----
-
-## 1. Solution Overview
-
-MyWorkHub is a Windows desktop application built with Avalonia UI and .NET 10. It follows a layered architecture with clear separation between UI, business logic, and infrastructure. All external integrations (Microsoft Graph, Azure DevOps, browser automation) are hidden behind interfaces defined in the Core project, making them independently testable and swappable.
+**Status:** Current — describes the code as of 2026-11 (after the feature-module rewrite).  
+**Scope:** the big picture for a human reader. Exact signatures live in the code (`src/MyWorkHub.Core/Features/<Name>/` for the interfaces); the working rules for contributors and coding agents live in [`AGENTS.md`](../AGENTS.md); the reasons behind the key choices live in [`adr/`](adr/README.md). When this document and the code disagree, the code wins — fix this document.
 
 ---
 
-## 2. Solution Structure
+## 1. What the app is
+
+A single-user desktop app (**Avalonia UI 12 + .NET 10**; Windows first, also Linux and macOS) that gathers one engineer's daily workflow into one window: Outlook mail and calendar, Teams chats, Azure DevOps pull requests and work items, a local todo list, scheduled browser automations, and two AI features that drive the locally installed Claude CLI (email digest, PR code review). Everything runs locally; there is no server.
+
+---
+
+## 2. Solution layout
 
 ```
 MyWorkHub/
 ├── src/
-│   ├── MyWorkHub.App/               # Entry point, DI composition root, Avalonia bootstrap
-│   ├── MyWorkHub.UI/                # Avalonia Views, ViewModels, Styles, Assets
-│   ├── MyWorkHub.Core/              # Domain models, service interfaces, business logic
-│   ├── MyWorkHub.Infrastructure/    # All external integrations (Graph, AzDO, Playwright, SQLite)
-│   └── MyWorkHub.Automation/        # Quartz.NET jobs, automation workflow orchestration
+│   ├── MyWorkHub.Core/            # Domain records, service interfaces, module contracts, navigation — pure C#
+│   ├── MyWorkHub.Infrastructure/  # Graph, MSAL, AzDO REST, EF Core + SQLite, credential store, Claude CLI, Playwright
+│   ├── MyWorkHub.Presentation/    # View models (CommunityToolkit.Mvvm), navigation, notification center — no Avalonia
+│   ├── MyWorkHub.UI/              # Avalonia views, view modules, ViewLocator, behaviors, themes, toasts, pickers
+│   ├── MyWorkHub.Automation/      # Quartz.NET jobs and their scheduling
+│   └── MyWorkHub.App/             # Entry point, CompositionRoot, tray, single-instance guard
 ├── tests/
-│   ├── MyWorkHub.Core.Tests/        # Unit tests for business logic
-│   └── MyWorkHub.Infrastructure.Tests/  # Integration tests for external services
-├── docs/
-│   ├── prd.md
-│   ├── architecture.md
-│   ├── tasks.md
-│   └── adr/                        # Architecture Decision Records
-├── README.md
-├── CLAUDE.md
+│   ├── MyWorkHub.Core.Tests/
+│   ├── MyWorkHub.Infrastructure.Tests/
+│   ├── MyWorkHub.UI.Tests/        # view models + headless Avalonia tests of real views
+│   └── MyWorkHub.Automation.Tests/
+├── docs/                          # this file, prd.md, tasks.md (historical), adr/
+├── AGENTS.md
 └── MyWorkHub.slnx
 ```
 
----
-
-## 3. Project Responsibilities
-
-### MyWorkHub.App
-- Application entry point (`Program.cs`)
-- Avalonia app bootstrap (`App.axaml.cs`)
-- Dependency injection composition root (all registrations)
-- `appsettings.json` loading
-- Quartz.NET scheduler startup/shutdown
-
-### MyWorkHub.UI
-- Avalonia Views (`.axaml` + code-behind)
-- ViewModels (CommunityToolkit.Mvvm `ObservableObject`)
-- Navigation service
-- App styles and theme overrides
-- No direct calls to infrastructure — all through ViewModels → Core interfaces
-
-### MyWorkHub.Core
-- Domain models (entities, DTOs, enums)
-- Service interfaces (`IEmailService`, `ICalendarService`, `IAzureDevOpsService`, etc.)
-- Business logic that does not depend on infrastructure
-- No Avalonia, no HTTP clients, no database — pure C#
-
-### MyWorkHub.Infrastructure
-- Implementations of all Core interfaces
-- Microsoft Graph SDK integration
-- Azure DevOps REST client integration
-- Microsoft.Playwright browser automation
-- EF Core + SQLite (DbContext, migrations, repositories)
-- Windows DPAPI credential store
-- No UI references
-
-### MyWorkHub.Automation
-- Quartz.NET job classes implementing `IJob`
-- Workflow orchestrators that sequence steps across multiple services
-- Automation run logging
-- References Core interfaces only — no direct infrastructure dependencies
+Inside every layer, code is grouped **by feature**: `Features/<Name>/` (Email, Calendar, Teams, PullRequests, WorkItems, Todo, Automations, Dashboard, Settings, Dev, …) plus shared non-page slices (`GraphAuth`, `AzureDevOps`, `CliAgent`, `EmailSummary`, `PrReview`, `Workspace`, `Updates`).
 
 ---
 
-## 4. Layer Diagram
+## 3. Layers and dependency rule
 
 ```
-┌─────────────────────────────────────────────────┐
-│                  MyWorkHub.UI                       │
-│         Views  │  ViewModels  │  Styles          │
-│         (Avalonia / CommunityToolkit.Mvvm)       │
-└────────────────────┬────────────────────────────┘
-                     │ ICommand / CommunityToolkit.Mvvm bindings
-                     ▼
-┌─────────────────────────────────────────────────┐
-│                 MyWorkHub.Core                      │
-│   Interfaces  │  Models  │  Business Logic       │
-│  IEmailService  ICalendarService  IAzDoService   │
-│  ICredentialStore  ITodoRepository               │
-└───────────┬─────────────────────────────────────┘
-            │ Implemented by
-            ▼
-┌─────────────────────────────────────────────────┐
-│             MyWorkHub.Infrastructure                │
-│  GraphEmailService  │  GraphCalendarService      │
-│  AzureDevOpsService │  PlaywrightService         │
-│  SqliteTodoRepo     │  DpapiCredentialStore       │
-│  AppDbContext (EF)  │  CachedDataService         │
-└─────────────────────────────────────────────────┘
-            ▲
-            │ Uses interfaces
-┌─────────────────────────────────────────────────┐
-│             MyWorkHub.Automation                    │
-│  TransportReimbursementJob                       │
-│  RemoteWorkSyncJob                               │
-│  AutomationRunLogger                             │
-│  (Quartz.NET IJob implementations)               │
-└─────────────────────────────────────────────────┘
+                ┌──────────────────────────────┐
+                │        MyWorkHub.App         │  composition root — the only project
+                │ (entry point, tray, Quartz)  │  that references everything
+                └──┬──────────┬─────────┬──────┘
+                   │          │         │
+        ┌──────────▼───┐ ┌────▼─────┐ ┌─▼──────────────┐
+        │      UI      │ │  Infra-  │ │   Automation   │
+        │  (Avalonia)  │ │ structure│ │  (Quartz jobs) │
+        └──────┬───────┘ └────┬─────┘ └───────┬────────┘
+               │              │               │
+        ┌──────▼───────┐      │               │
+        │ Presentation │      │               │
+        │ (view models)│      │               │
+        └──────┬───────┘      │               │
+               │              │               │
+        ┌──────▼──────────────▼───────────────▼────────┐
+        │                 MyWorkHub.Core               │
+        │  records · interfaces · module contracts     │
+        └──────────────────────────────────────────────┘
 ```
+
+- **UI and Presentation never touch Infrastructure.** They depend on Core interfaces only; the App wires the implementations in.
+- **Presentation has no Avalonia reference**, so view models are tested as plain C#.
+- **Core and Presentation are `IsAotCompatible`**: the trim/AOT analyzers act as a tripwire against reflection there. The app itself is not AOT-published (EF Core, Graph, MSAL, Playwright and Quartz use reflection).
 
 ---
 
-## 5. Tech Stack
+## 4. Feature modules (how a feature plugs in)
 
-| Component | Package | Version |
-|-----------|---------|---------|
-| Runtime | .NET | 10 (LTS) |
-| UI framework | Avalonia | 12.x |
-| MVVM | CommunityToolkit.Mvvm | latest |
-| Microsoft Graph | Microsoft.Graph | 6.x (Kiota-based) |
-| MSAL auth | Microsoft.Identity.Client | 4.x |
-| Azure DevOps | Raw HttpClient REST (no SDK — avoids SqlClient CVE) | — |
-| Browser automation | Microsoft.Playwright | 1.x |
-| Scheduler | Quartz.NET | 3.x |
-| ORM | Microsoft.EntityFrameworkCore | 10.x |
-| SQLite driver | Microsoft.EntityFrameworkCore.Sqlite | 10.x |
-| Excel (V2) | ClosedXML | latest |
-| DI container | Microsoft.Extensions.DependencyInjection | 10.x |
-| Configuration | Microsoft.Extensions.Configuration | 10.x |
-| Logging | Microsoft.Extensions.Logging + Serilog | latest |
+There is no central registration file, no hardcoded sidebar and no naming-convention view lookup. Each feature contributes one **module class per layer**, discovered by reflection at startup ([ADR-0003](adr/0003-feature-module-architecture.md)):
 
----
+| Contract | Lives in | Contributes |
+|---|---|---|
+| `IInfrastructureModule` | `Infrastructure/Features/<Name>/` | service implementations + options |
+| `IPresentationModule` | `Presentation/Features/<Name>/` | view-model registrations + an optional sidebar entry (`NavigationItem`, sorted by `Order`) |
+| `IViewModule` | `UI/Features/<Name>/` | the view-model → view map used by `ViewLocator` |
+| `IAutomationModule` | `Automation/Scheduling/` | an automation descriptor + its Quartz job type |
 
-## 6. Service Interfaces (Core)
+`ModuleDiscovery.Find<T>()` instantiates every non-abstract, non-generic `T` with a public parameterless constructor in the scanned assemblies (module classes are `public sealed` by convention). Adding a feature means adding these folders and nothing else; the Todo slice is the reference template (step-by-step recipe in `AGENTS.md`).
 
-```csharp
-// Email
-public interface IEmailService
-{
-    Task<IReadOnlyList<EmailItem>> GetImportantEmailsAsync(CancellationToken ct = default);
-    Task<int> GetUnreadCountAsync(CancellationToken ct = default);
-    Task<IReadOnlyList<MailFolder>> GetMailFoldersAsync(CancellationToken ct = default);
-    Task<string> GetEmailBodyAsync(string id, CancellationToken ct = default);
-    Task SendEmailAsync(string to, string subject, string body, string? attachmentPath = null, CancellationToken ct = default);
-}
+### Composition and fail-loud startup
 
-// Email settings (folder picker)
-public interface IEmailSettingsService
-{
-    IReadOnlyList<string> GetWatchedFolderIds();
-    void Save(IReadOnlyList<string> folderIds);
-}
+`CompositionRoot.Build()`:
 
-// AI email digest
-public interface IEmailSummaryService
-{
-    Task<string> SummarizeAsync(IReadOnlyList<EmailItem> emails, CancellationToken ct = default);
-}
+1. seeds `~/.MyWorkHub/appsettings.json` and `review-agent.md` from the shipped copies if they are missing;
+2. configures Serilog;
+3. `AddInfrastructure()` — EF Core factory, Data Protection + credential store, then every infrastructure module;
+4. `AddUi()` — navigation, notification center, shell, presentation and view modules, themes, toasts, `ViewRegistry`, `ViewLocator`;
+5. `AddAutomations()` — Quartz jobs from the automation modules;
+6. builds the container, **applies EF Core migrations**, then runs `ShellCompositionValidator`: every page view model and sidebar target must resolve and have a constructible view, otherwise launch aborts with the full list of problems.
 
-// Calendar
-public interface ICalendarService
-{
-    Task CreateRemoteWorkEventsAsync(IEnumerable<DateOnly> dates, CancellationToken ct = default);
-    Task<IReadOnlyList<DateOnly>> GetExistingRemoteWorkDatesAsync(int year, int month, CancellationToken ct = default);
-}
-
-// Azure DevOps
-public interface IAzureDevOpsService
-{
-    Task<IReadOnlyList<PullRequestItem>> GetPullRequestsForReviewAsync(CancellationToken ct = default);
-    Task<IReadOnlyList<WorkItem>> GetMyWorkItemsAsync(CancellationToken ct = default);
-    // Best-effort: items whose comments cannot be fetched are silently skipped.
-    Task<IReadOnlyList<WorkItemMention>> GetWorkItemMentionsAsync(
-        IReadOnlyList<WorkItem> workItems, CancellationToken ct = default);
-}
-
-// Teams
-public interface ITeamsService
-{
-    Task<IReadOnlyList<TeamsChatItem>> GetUnreadChatsAsync(CancellationToken ct = default);
-    Task<int> GetUnreadCountAsync(CancellationToken ct = default);
-}
-
-// Todo (local)
-public interface ITodoRepository
-{
-    Task<IReadOnlyList<TodoItem>> GetAllAsync(CancellationToken ct = default);
-    Task AddAsync(TodoItem item, CancellationToken ct = default);
-    Task UpdateAsync(TodoItem item, CancellationToken ct = default);
-    Task DeleteAsync(Guid id, CancellationToken ct = default);
-}
-
-// Credential store
-public interface ICredentialStore
-{
-    void Save(string key, string plaintext);
-    string? Get(string key);
-    void Delete(string key);
-}
-
-// Work item @mention read-state
-public interface ISeenMentionRepository
-{
-    Task<IReadOnlySet<int>> GetSeenCommentIdsAsync(CancellationToken ct = default);
-    Task MarkSeenAsync(int commentId, CancellationToken ct = default);
-}
-
-// Code-review prerequisites and execution
-public sealed record PrerequisiteCheckResult(bool GitFound, bool ClaudeFound, string? WorkFolderIssue);
-
-public interface IPrReviewService
-{
-    Task<PrerequisiteCheckResult> CheckPrerequisitesAsync();
-    Task<string> ReviewAsync(PullRequestItem pr, IProgress<string>? progress = null, CancellationToken ct = default);
-}
-
-// Workspace settings (Claude CLI path, work folder, review model)
-public interface IWorkspaceSettingsService
-{
-    WorkspaceSettings Get();
-    void Save(string workFolderPath, string claudeExecutablePath, string reviewModelId);
-}
-
-// Automation run logging
-public interface IAutomationLogger
-{
-    Task<Guid> BeginRunAsync(string jobName, CancellationToken ct = default);
-    Task CompleteRunAsync(Guid runId, bool success, string? errorMessage = null, CancellationToken ct = default);
-    Task<IReadOnlyList<AutomationRun>> GetHistoryAsync(string jobName, int count = 30, CancellationToken ct = default);
-}
-
-// Browser session (Playwright wrapper)
-public interface IBrowserSession : IAsyncDisposable
-{
-    Task NavigateAsync(string url);
-    Task<string> GetTextAsync(string selector);
-    Task ClickAsync(string selector);
-    Task FillAsync(string selector, string value);
-    // Triggers a file download by clicking linkSelector, waits for the download to complete,
-    // saves the file to the app temp folder (%USERPROFILE%\.MyWorkHub\temp\), and returns
-    // the absolute file path. Do NOT return byte[] — Playwright downloads require a listener
-    // registered before the click; the file is always written to disk first.
-    Task<string> DownloadFileAsync(string linkSelector);
-    Task WaitForSelectorAsync(string selector);
-}
-
-public interface IBrowserService
-{
-    Task<IBrowserSession> CreateSessionAsync(bool headless = true);
-}
-```
+Consequence: page view-model constructors run at startup, so they stay cheap.
 
 ---
 
-## 7. Data Models
+## 5. Pages, navigation and notifications
 
-### SQLite Entities (EF Core)
-
-```csharp
-// Personal task list
-public class TodoItem
-{
-    public Guid Id { get; set; }
-    public string Title { get; set; } = "";
-    public DateOnly? DueDate { get; set; }
-    public bool IsCompleted { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public DateTime? CompletedAt { get; set; }
-}
-
-// Automation execution history
-public class AutomationRun
-{
-    public Guid Id { get; set; }
-    public string JobName { get; set; } = "";
-    public DateTime StartedAt { get; set; }
-    public DateTime? CompletedAt { get; set; }
-    public AutomationStatus Status { get; set; }  // Pending, Success, Failed, Cancelled
-    public string? ErrorMessage { get; set; }
-    public string? Details { get; set; }  // JSON — step-by-step result details
-}
-
-// Encrypted credential storage
-public class AppCredential
-{
-    [Key]  // Key is the EF Core primary key — string PK, not a generated int/Guid
-    public string Key { get; set; } = "";          // e.g. "TCL_PASSWORD", "PEOPLENET_PASSWORD"
-    public string EncryptedValue { get; set; } = ""; // DPAPI-encrypted, base64-encoded
-    public DateTime UpdatedAt { get; set; }
-}
-
-// Remote work plans (source of truth for sync)
-public class RemoteWorkSchedule
-{
-    public Guid Id { get; set; }
-    public int Year { get; set; }
-    public int Month { get; set; }
-    public string DaysJson { get; set; } = "[]";   // JSON array of day numbers, e.g. [2, 5, 9, 12]
-    public DateTime CreatedAt { get; set; }
-    public DateTime? LastSyncedAt { get; set; }
-    public string? SyncStatusJson { get; set; }    // JSON: { "peoplenet": "ok", "outlook": "ok", "mwork": "failed" }
-}
-
-// Tracks which AzDO work item comment @mentions the user has already opened (PK = CommentId)
-public sealed class SeenWorkItemMention
-{
-    public int CommentId { get; set; }   // PK — ValueGeneratedNever
-    public DateTime SeenAt { get; set; }
-}
-```
-
-### Read Models / DTOs (Core, not persisted)
-
-```csharp
-public record EmailItem(string Id, string From, string Subject, string Preview,
-    DateTime ReceivedAt, bool IsFlagged, string FolderName = "")
-{
-    public string? FullBody { get; init; }  // fetched lazily before AI summarisation
-}
-
-public record TeamsChatItem(string ChatId, string ChatName, string LastSenderName,
-    string MessagePreview, DateTime ReceivedAt, int UnreadCount, string DeepLinkUrl);
-
-public record PullRequestItem(int Id, string Title, string Author, string Repository,
-    DateTime CreatedAt, string VoteStatus, string Url);
-
-// Effort = StoryPoints/Effort field. Project = team project name (required for mention queries).
-public record WorkItem(int Id, string Title, string Type, string State, string Priority,
-    DateTime? DueDate, string Url, string Effort = "", string Project = "");
-
-// A comment on an active work item that @mentions the current user.
-public record WorkItemMention(int WorkItemId, string WorkItemTitle, string WorkItemUrl,
-    int CommentId, string AuthorDisplayName, DateTime CreatedAt, string TextSnippet);
-
-// Projected for the email folder picker in Settings.
-public record MailFolder(string Id, string DisplayName, bool IsWatched);
-
-// Workspace settings for PR code review (Claude CLI path, work folder, review model).
-public sealed record WorkspaceSettings(string WorkFolderPath, string ClaudeExecutablePath, string ReviewModelId);
-```
+- **Pages** are `PageViewModel`s. Every service is an optional nullable constructor parameter; a missing or unconfigured service degrades the page (a notice, disabled buttons) instead of failing.
+- **Navigation** goes through `INavigationService.NavigateTo(NavigationTarget)`. A target can carry an `ElementId`; pages implementing `IDeepLinkTarget` (Todo, Email, Pull requests, Work items) select, scroll to and flash that row ([ADR-0004](adr/0004-element-level-deep-linking.md)). Unknown ids are ignored.
+- **Notifications**: `INotificationService.Notify(…, NavigationTarget?)` shows a toast and records it in the bell history; clicking either navigates to the target.
+- **Periodic refresh**: `UpdateWatcher` runs from launch to exit (also while in the tray). Every `UI:RefreshIntervalMinutes` it checks each enabled source (mail, chats, PRs, work items, mentions, calendar), raises one deep-linked notification per new item, then refreshes the page on screen. The first check of a source records a baseline only.
+- **Commands and cancellation**: a page command absorbs the cancellation of a superseded run and reports every other failure, including cancellations a library raised on its own ([ADR-0008](adr/0008-commands-never-rethrow-cancellation.md)). Per-row commands that run concurrently (tick a todo, run an automation, open a mention) take no cancellation token, because a click on another row would cancel theirs.
 
 ---
 
-## 8. Authentication Strategy
+## 6. Integrations
 
-### Microsoft Graph (email + calendar)
+| Integration | How |
+|---|---|
+| Microsoft Graph (mail, calendar, Teams) | `Microsoft.Graph` 6.x (Kiota). Tests use the `GraphServiceClient(IRequestAdapter)` seam. Not signed in → `GraphNotConnectedException` → the page's sign-in panel. |
+| Sign-in | MSAL with the **system browser** (`WithUseEmbeddedWebView(false)`, required by the corporate SSO). Token cache `~/.MyWorkHub/msal_token_cache.bin`, encrypted per OS (DPAPI / Keychain / libsecret). Only user-consentable scopes are requested. |
+| Azure DevOps | Raw `HttpClient` REST with PAT Basic auth, **not** the TFS/VSS SDK ([ADR-0002](adr/0002-azdo-rest-not-sdk.md)). Comment @mentions use a preview-only API, called best-effort ([ADR-0001](adr/0001-azdo-work-item-comments-preview-api.md)). |
+| Storage | EF Core + SQLite (`Sqlite.Core` + `bundle_e_sqlite3`, cross-platform). Entities and configurations live in their feature slice; migrations are applied automatically at startup. |
+| Secrets | `ICredentialStore` on ASP.NET Core Data Protection (DPAPI on Windows, AES + HMAC key ring elsewhere; keys in `~/.MyWorkHub/keys/`). Always addressed through `CredentialKeys` constants. Never in `appsettings.json`. |
+| Browser automation | Playwright, Chromium only, behind `IBrowserService` / `IBrowserSession`. Downloads are awaited before the click and written to disk. |
+| Scheduling | Quartz.NET embedded in the process, started once the window is up and shut down on exit. |
+| Default browser | `IBrowserLauncher` (shell-execute) — distinct from the Playwright `IBrowserService`. |
 
-- **Library:** MSAL.NET (`Microsoft.Identity.Client`)
-- **Flow:** Interactive browser popup on first run → token cached to disk (encrypted). Use `WithUseEmbeddedWebView(false)` so MSAL opens the system browser (Edge/Chrome) rather than an embedded WebView2 — this handles Cegid's SSO/conditional access correctly and works without WebView2 being installed
-- **App registration:** Personal Azure subscription — multi-tenant app, delegated permissions only
-- **Permissions requested:**
-  - `Mail.Read` — read inbox
-  - `Calendars.ReadWrite` — create Working Elsewhere events
-  - `Chat.Read` — read Teams DMs and group chats (user-consentable, no admin needed)
-  - `ChannelMessage.Read.All` — read @mentions in channels. **NOT requested at sign-in** (confirmed 2026-06-22): it requires admin consent in the Cegid tenant, and MSAL bundles all scopes into one interactive call, so including it throws an "admin approval required" wall over the *entire* sign-in. The Teams module degrades gracefully without it (DMs/group chats via `Chat.Read`; channel @mentions unavailable). Request incrementally only if/when an admin grants it.
-  - `offline_access` — refresh token
-  - `User.Read` — basic profile (for user ID)
-- **Token cache:** `~/.MyWorkHub/msal_token_cache.bin` — protected with DPAPI
-- **Tenant:** `common` endpoint → user signs in with work account `@cegid.com`
+### Email reading pane
 
-### Azure DevOps
+The Email page is a mail client (folder tree, optional *Favorites* merging chosen folders, HTML reading pane). Message HTML is untrusted: it is rendered in a native WebView behind a strict Content-Security-Policy, remote images load only on request, and every navigation is filtered by `ReaderNavigationGuard` ([ADR-0007](adr/0007-email-html-in-sandboxed-native-webview.md)).
 
-- **Method:** Personal Access Token (PAT)
-- **Storage:** Encrypted via `ICredentialStore` (DPAPI)
-- **Scope required:** `Code (Read)`, `Work Items (Read)`
-- **Organization:** `https://dev.azure.com/cegid/`
+### Automations
 
-### External websites (TCL, PeopleNet, mwork)
+Two automations, each an `AutomationJob` subclass with a descriptor in `AutomationCatalog` and an `Automation:<Id>` config section:
 
-- **Method:** Stored username/password, automated via Playwright
-- **Storage:** Encrypted via `ICredentialStore` (DPAPI) — `TCL_USER`, `TCL_PASS`, `PEOPLENET_USER`, `PEOPLENET_PASS`, `MWORK_USER`, `MWORK_PASS`
-- **First-time setup:** Settings UI with password fields → saved encrypted on Save
+- **TransportReimbursement** — downloads the TCL attestation with Playwright and emails it to the configured billing address through Graph.
+- **RemoteWorkSync** — pushes the month's remote-work plan (edited on the Automations page) to Outlook, PeopleNet and mwork. The three steps are **isolated**: each has its own `try/catch` (`AutomationStepRecorder`), so one failure never stops the others.
+
+Every run and its per-step outcomes are logged to SQLite and shown on the Automations page; a finished run raises a notification. There is no automatic retry — a failed run is rerun with "Run now".
 
 ---
 
-## 9. Automation Engine Design
+## 7. AI features (Claude CLI)
 
-### Scheduler
+Both features go through one abstraction, `ICliAgentRunner`, implemented only by `ClaudeCliAgentRunner` — the single place that builds a `claude` command line ([ADR-0005](adr/0005-cli-agent-runner-is-claude-specific.md)). Invariants:
 
-Quartz.NET runs embedded in the app process. Jobs are registered at startup with their cron triggers from `AppSettings.Automation.*`.
+- system prompt passed as an argument, user content through stdin;
+- by default the run happens in a fresh empty temp directory with `--strict-mcp-config`, so no repository files or ambient MCP servers leak in;
+- tool allow/deny lists per request (headless runs cannot answer permission prompts).
 
-```
-App startup
-  └── ISchedulerFactory.CreateScheduler()
-  └── Register jobs from DI container
-  └── scheduler.Start()
-
-App shutdown
-  └── scheduler.Shutdown(waitForJobsToComplete: true)
-```
-
-### Job Structure
-
-Each automation implements `Quartz.IJob` and is resolved from DI (Quartz.NET supports DI injection via `JobFactory`).
-
-```
-TransportReimbursementJob
-  ├── Step 1: IBrowserService.CreateSessionAsync()
-  │    └── PlaywrightTclService.DownloadInvoiceAsync()
-  ├── Step 2: IEmailService.SendEmailAsync(to, subject, body, attachment)
-  ├── Step 3: Log result via IAutomationLogger
-  └── Step 4: Dispose browser session
-
-RemoteWorkSyncJob  (manual trigger only — no cron)
-  ├── Step 1: Get selected dates from RemoteWorkSchedule
-  ├── Step 2: ICalendarService.CreateRemoteWorkEventsAsync(dates)   [Outlook]
-  ├── Step 3: PlaywrightPeopleNetService.FillRemoteDaysAsync(dates)
-  ├── Step 4: PlaywrightMworkService.FillRemoteDaysAsync(dates)
-  └── Step 5: Log per-step result, update RemoteWorkSchedule.SyncStatusJson
-  
-  IMPORTANT: Steps 2, 3, and 4 are executed independently with individual try/catch blocks.
-  A failure in one step (e.g. PeopleNet) must NOT prevent the other steps (Outlook, mwork)
-  from running. All three steps always execute; results are collected and logged per step.
-```
-
-### Retry Policy
-
-Each step retries up to 3 times with 30-second delays before marking as failed. Steps are independent — a PeopleNet failure does not prevent the Outlook step from running.
+| Feature | Specifics |
+|---|---|
+| Email digest | All dangerous tools denied. Email content is wrapped in a **nonce-delimited block** the model is told to treat as data, so an email cannot forge the end marker. |
+| PR review | Clones/fetches into `Workspace:WorkFolderPath` and runs **in the clone** with read-only tools only. The AzDO PAT reaches git through environment variables only — never the command line, remote URL or `.git/config`. The system prompt is a review-agent Markdown template (per-review override → configured path → seeded file → built-in default). |
 
 ---
 
-## 10. Configuration Schema
+## 8. Configuration
 
-`appsettings.json` — non-sensitive values only. Sensitive values (passwords, tokens) are stored in DPAPI via `ICredentialStore` and only referenced by key.
+The runtime file is `~/.MyWorkHub/appsettings.json` (the shipped `src/MyWorkHub.App/appsettings.json` is only the first-run seed). Sections: `AzureAD`, `AzureDevOps`, `Email`, `Workspace`, `Automation`, `ExternalSites`, `UI`, `Notifications`. Each slice binds its own section through `XxxOptions.FromConfiguration`.
 
-```json
-{
-  "AzureAD": {
-    "ClientId": "<app-client-id>",
-    "TenantId": "common"
-  },
-  "AzureDevOps": {
-    "OrganizationUrl": "https://dev.azure.com/cegid/",
-    "Projects": ["project-name-1", "project-name-2"]  // AzDO team project names as they appear in the URL: dev.azure.com/cegid/{project-name}
-  },
-  "Automation": {
-    "TransportReimbursement": {
-      "Enabled": true,
-      "CronExpression": "0 0 9 1 * ?",
-      "FacturationEmail": "",
-      "EmailSubjectTemplate": "Remboursement titre de transport - {{subscription_start}} au {{subscription_end}}",
-      "EmailBodyTemplate": ""
-    }
-  },
-  "ExternalSites": {
-    "TCL": { "BaseUrl": "https://www.tcl.fr/" },
-    "PeopleNet": { "BaseUrl": "" },
-    "MWork": { "BaseUrl": "https://app.m-work.co" }
-  },
-  "UI": {
-    "RefreshIntervalMinutes": 5,
-    "MinimizeToTrayOnClose": true,
-    "Theme": "System",
-    "Palette": "GitHub"
-  },
-  "Workspace": {
-    "WorkFolderPath": "",          // folder where PR repos are cloned for review
-    "ClaudeExecutablePath": "",    // empty = resolve "claude" from PATH
-    "ReviewModelId": "claude-sonnet-5"
-  },
-  "Email": {
-    "FolderIds": [ "inbox" ],      // well-known names or Graph folder IDs
-    "MaxPerFolder": 25
-  }
-}
-```
+- **Applied live**: `AzureDevOps`, `Workspace`, `Email` (through `LiveOptions<T>`, read once per operation), theme and palette, refresh interval and notification switches ([ADR-0006](adr/0006-scoped-live-settings-reload.md)).
+- **Read at startup**: everything else (`AzureAD`, `Automation` schedules, `ExternalSites`, `UI:MinimizeToTrayOnClose`).
+
+The **Settings page** is the only editor: it rewrites only the keys it owns, atomically (temp file + move), never overwrites a malformed file, then reloads the configuration.
 
 ---
 
-## 11. Error Handling Strategy
+## 9. Theming
 
-| Scenario | Handling |
-|----------|----------|
-| Graph API call fails | Log warning, show stale data with "last updated" timestamp |
-| AzDO API call fails | Log warning, show stale data |
-| Automation step fails | Retry 3× with 30s delay, then mark run as Failed, show toast notification |
-| Playwright can't find element | Screenshot the page, save to `~/.MyWorkHub/errors/`, log with details |
-| MSAL token expired | Silently refresh via refresh token; re-prompt if refresh fails |
-| Network offline | Show offline indicator on dashboard, serve cached data |
+Fluent theme plus app styles, with four swappable palettes (GitHub, VSCode, OneDark, TokyoNight), each defining the same `App*` brush keys for light and dark. Views use `{DynamicResource App*Brush}` only — no hardcoded colours, no OS-specific icon fonts.
 
 ---
 
-## 12. Implementation Notes for AI
+## 10. Quality gates
 
-These notes exist because the docs above contain choices that are easy to implement incorrectly. Read before scaffolding.
-
-| Topic | Correct approach |
-|-------|-----------------|
-| MSAL browser | Always use `WithUseEmbeddedWebView(false)` — opens system browser, not WebView2 |
-| Playwright browser | Install and use **Chromium only** (`playwright install chromium`) — do not install Firefox or WebKit |
-| Playwright downloads | Register `page.Download += handler` BEFORE clicking the download link; do not try to intercept network responses |
-| EF Core migrations | Apply via `dbContext.Database.MigrateAsync()` on startup — never require the user to run `dotnet ef` manually |
-| AppCredential PK | `Key` (string) is the primary key — annotate with `[Key]` and do NOT add a separate `Id` column |
-| DI registration order | Register `ICredentialStore` (DpapiCredentialStore) before anything that uses credentials (MSAL setup, AzDO client) |
-| RemoteWorkSyncJob steps | Wrap each of the 3 sync steps (Outlook, PeopleNet, mwork) in its own `try/catch` — never let one failure abort the others |
-| ITeamsService.GetUnreadCountAsync | This is a lightweight call for the dashboard counter only. Implement it by summing `unreadMessageCount` across `/me/chats` — do NOT call `GetUnreadChatsAsync` and count the results (that fetches message previews unnecessarily) |
-| Template variables | `{{subscription_start}}` and `{{subscription_end}}` are the exact variable tokens in the email template — use these exact strings in the template engine, do not change the format |
-| AzDO `Projects` config | Values are team project names as they appear in the URL path: `dev.azure.com/cegid/{ProjectName}` |
+- `TreatWarningsAsErrors`, `EnforceCodeStyleInBuild`, `AnalysisMode=All`: any warning fails the build; each relaxed rule is justified in `.editorconfig`.
+- xUnit v3, one test project per layer mirroring `Features/<Name>/`; headless Avalonia tests click real views; the real `AddUi()` composition is validated in tests.
+- Significant decisions are recorded as ADRs.
 
 ---
 
-## 13. Folder Layout at Runtime
+## 11. Runtime data
 
 ```
-%USERPROFILE%\.MyWorkHub\
-├── MyWorkHub.db                   # SQLite database
-├── appsettings.json                  # User configuration
-├── msal_token_cache.bin              # Encrypted MSAL token cache
-├── logs\
-│   └── MyWorkHub-YYYY-MM-DD.log  # Serilog rolling file
-├── temp\
-│   └── tcl-invoice-YYYY-MM.pdf      # Downloaded TCL invoice (deleted after email sent)
-└── errors\
-    └── playwright-YYYYMMDD-HHmmss.png  # Playwright failure screenshots
+~/.MyWorkHub/                (%USERPROFILE%\.MyWorkHub\ on Windows)
+├── MyWorkHub.db             SQLite database
+├── appsettings.json         user configuration
+├── review-agent.md          default PR review-agent template
+├── msal_token_cache.bin     encrypted MSAL token cache
+├── keys/                    Data Protection key ring
+├── logs/                    Serilog rolling files
+├── temp/                    downloads (e.g. the transport attestation)
+├── errors/                  Playwright failure screenshots
+└── repos/                   PR review clones
 ```

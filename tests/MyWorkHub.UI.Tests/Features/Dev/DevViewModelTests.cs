@@ -194,6 +194,17 @@ public sealed class DevViewModelTests
         Assert.Contains("synthetic", viewModel.LastResult, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public async Task Should_fall_back_to_a_synthetic_target_when_a_library_cancels_the_lookup_on_its_own()
+    {
+        var viewModel = new DevViewModel(_notifications, todos: new FakeTodoRepository { Failure = new TaskCanceledException("timed out") });
+
+        await viewModel.SendTodoDeepLinkCommand.ExecuteAsync(null);
+
+        Assert.Equal(TodoViewModel.TargetFor(Guid.Empty), Assert.Single(_notifications.Sent).Target);
+        Assert.Contains("timed out", viewModel.LastResult, StringComparison.Ordinal);
+    }
+
     // --- End to end through the real composition ------------------------------------
 
     [Fact]

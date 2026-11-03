@@ -103,8 +103,12 @@ public sealed partial class WorkItemsViewModel : AzureDevOpsPageViewModel, IDeep
     }
 
     /// <summary>Opens the commented work item in the browser and marks the mention read.</summary>
+    /// <remarks>
+    /// Takes no CancellationToken: the toolkit cancels the running execution's token on every new execution, so
+    /// opening a second mention quickly would otherwise drop the first one's read state.
+    /// </remarks>
     [RelayCommand(AllowConcurrentExecutions = true)]
-    private async Task OpenMentionAsync(WorkItemMentionRowViewModel row, CancellationToken ct)
+    private async Task OpenMentionAsync(WorkItemMentionRowViewModel row)
     {
         ArgumentNullException.ThrowIfNull(row);
 
@@ -122,12 +126,12 @@ public sealed partial class WorkItemsViewModel : AzureDevOpsPageViewModel, IDeep
 
         try
         {
-            await _seenMentions.MarkSeenAsync(row.CommentId, ct);
+            await _seenMentions.MarkSeenAsync(row.CommentId);
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (Exception)
         {
-            // Read state is a convenience: failing to persist it only means the mention shows as
-            // unread again next session. The user got what they clicked for — don't raise an error.
+            // Read state is a convenience: failing to persist it only means the mention shows as unread
+            // again next session. The user got what they clicked for — don't raise an error.
         }
     }
 

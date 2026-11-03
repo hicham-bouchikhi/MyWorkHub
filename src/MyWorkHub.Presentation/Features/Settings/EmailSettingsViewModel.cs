@@ -124,7 +124,11 @@ public sealed partial class EmailSettingsViewModel : ViewModelBase
         {
             await _settings!.SaveEmailAsync(settings, ct);
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return; // superseded: the newer execution owns the page
+        }
+        catch (Exception ex)
         {
             ErrorMessage = $"Could not save the Email settings: {ex.Message}";
             StatusMessage = null;

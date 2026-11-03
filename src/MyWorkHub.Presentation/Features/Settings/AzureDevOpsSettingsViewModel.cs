@@ -110,6 +110,17 @@ public sealed partial class AzureDevOpsSettingsViewModel : ViewModelBase
         {
             result = await _connection!.ConnectAsync(PersonalAccessToken, ct);
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return; // superseded: the newer execution owns the page
+        }
+        catch (Exception ex)
+        {
+            // e.g. the HttpClient timeout: a cancellation our token never requested (ADR-0008).
+            ErrorMessage = $"Could not verify the token: {ex.Message}";
+            RefreshTokenStatus();
+            return;
+        }
         finally
         {
             IsBusy = false;
@@ -205,7 +216,11 @@ public sealed partial class AzureDevOpsSettingsViewModel : ViewModelBase
         {
             await _settings.SaveAzureDevOpsAsync(new AzureDevOpsSettings(url, projects), ct);
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return false; // superseded: the newer execution owns the page
+        }
+        catch (Exception ex)
         {
             ErrorMessage = $"Could not save the Azure DevOps settings: {ex.Message}";
             StatusMessage = null;

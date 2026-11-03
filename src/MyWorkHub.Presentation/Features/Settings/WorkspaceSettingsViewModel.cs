@@ -128,7 +128,11 @@ public sealed partial class WorkspaceSettingsViewModel : ViewModelBase
         {
             await _settings!.SaveWorkspaceAsync(workspace, ct);
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return; // superseded: the newer execution owns the page
+        }
+        catch (Exception ex)
         {
             ErrorMessage = $"Could not save the workspace settings: {ex.Message}";
             StatusMessage = null;

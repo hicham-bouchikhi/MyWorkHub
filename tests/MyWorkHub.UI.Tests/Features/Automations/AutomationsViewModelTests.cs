@@ -104,6 +104,22 @@ public sealed class AutomationsViewModelTests
     }
 
     [Fact]
+    public async Task Should_show_an_error_when_a_library_cancels_on_its_own()
+    {
+        // e.g. a database timeout: our token was never cancelled.
+        _scheduler.Schedules.Add(new AutomationSchedule(AutomationCatalog.RemoteWorkSync, null, null, null));
+        _runLog.Failure = new TaskCanceledException("timed out");
+        var vm = ViewModel();
+
+        await vm.LoadCommand.ExecuteAsync(null);
+        Assert.Contains("timed out", vm.ErrorMessage, StringComparison.Ordinal);
+
+        _scheduler.RunNowFailure = new TaskCanceledException("timed out");
+        await vm.RunNowCommand.ExecuteAsync(vm.Automations[0]);
+        Assert.Equal("Could not start: timed out", vm.Automations[0].RunNowStatus);
+    }
+
+    [Fact]
     public async Task Should_load_and_save_the_current_month_plan()
     {
         _plans.Saved = RemoteWorkPlan.Create(2026, 9, [2]);

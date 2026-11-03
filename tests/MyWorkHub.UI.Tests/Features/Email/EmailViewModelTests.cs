@@ -53,6 +53,19 @@ public sealed class EmailViewModelTests
     }
 
     [Fact]
+    public async Task Should_keep_the_prompt_and_show_an_error_when_a_library_cancels_sign_in_on_its_own()
+    {
+        var connection = new FakeGraphConnection { IsSignedIn = false, SignInFailure = new TaskCanceledException("timed out") };
+        var viewModel = await LoadedAsync(new FakeEmailService(connection), connection);
+
+        await viewModel.SignInCommand.ExecuteAsync(null);
+
+        Assert.True(viewModel.NeedsSignIn);
+        Assert.Contains("timed out", viewModel.ErrorMessage, StringComparison.Ordinal);
+        Assert.False(viewModel.IsBusy);
+    }
+
+    [Fact]
     public async Task Should_keep_the_prompt_and_show_why_when_sign_in_fails()
     {
         var connection = new FakeGraphConnection { IsSignedIn = false, SignInError = "Sign-in was cancelled." };

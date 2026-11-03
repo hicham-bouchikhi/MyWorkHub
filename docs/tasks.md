@@ -1,5 +1,7 @@
 # MyWorkHub — Task Matrix
 
+> **Historical — not maintained.** This is the build log of the first implementation (June 2026), written before the feature-module rewrite. Class names, project layout, package choices and registration steps below no longer match the code. For the current design read [architecture.md](architecture.md) and [`AGENTS.md`](../AGENTS.md); for open product gaps see the status section of [prd.md](prd.md).
+
 **Version:** 1.0  
 **Date:** 2026-06-22  
 **Total MVP tasks:** 78 | **V2 tasks:** 6

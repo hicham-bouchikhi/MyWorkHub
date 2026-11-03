@@ -83,7 +83,11 @@ public sealed partial class TodoViewModel : PageViewModel, IDeepLinkTarget
             _isLoaded = true;
             ErrorMessage = null;
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return; // superseded: the newer execution owns the page
+        }
+        catch (Exception ex)
         {
             ErrorMessage = $"Could not load your tasks: {ex.Message}";
             return;
@@ -102,7 +106,11 @@ public sealed partial class TodoViewModel : PageViewModel, IDeepLinkTarget
             NewTitle = "";
             ErrorMessage = null;
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return; // superseded: the newer execution owns the page
+        }
+        catch (Exception ex)
         {
             ErrorMessage = $"Could not add the task: {ex.Message}";
         }
@@ -110,8 +118,10 @@ public sealed partial class TodoViewModel : PageViewModel, IDeepLinkTarget
 
     private bool CanAdd() => _repository is not null && !string.IsNullOrWhiteSpace(NewTitle);
 
+    // Row commands take no CancellationToken: the toolkit cancels the running execution's token on every new
+    // execution — even a concurrent one for another row — which would abandon this row's change half-done.
     [RelayCommand(AllowConcurrentExecutions = true)]
-    private async Task ToggleCompletedAsync(TodoRowViewModel row, CancellationToken ct)
+    private async Task ToggleCompletedAsync(TodoRowViewModel row)
     {
         ArgumentNullException.ThrowIfNull(row);
         if (_repository is null)
@@ -122,11 +132,11 @@ public sealed partial class TodoViewModel : PageViewModel, IDeepLinkTarget
         var completed = !row.IsCompleted;
         try
         {
-            await _repository.SetCompletedAsync(row.Id, completed, ct);
+            await _repository.SetCompletedAsync(row.Id, completed);
             row.IsCompleted = completed;
             ErrorMessage = null;
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (Exception ex)
         {
             row.RefreshCompletion();
             ErrorMessage = $"Could not update the task: {ex.Message}";
@@ -134,7 +144,7 @@ public sealed partial class TodoViewModel : PageViewModel, IDeepLinkTarget
     }
 
     [RelayCommand(AllowConcurrentExecutions = true)]
-    private async Task DeleteAsync(TodoRowViewModel row, CancellationToken ct)
+    private async Task DeleteAsync(TodoRowViewModel row)
     {
         ArgumentNullException.ThrowIfNull(row);
         if (_repository is null)
@@ -144,11 +154,11 @@ public sealed partial class TodoViewModel : PageViewModel, IDeepLinkTarget
 
         try
         {
-            await _repository.DeleteAsync(row.Id, ct);
+            await _repository.DeleteAsync(row.Id);
             Items.Remove(row);
             ErrorMessage = null;
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (Exception ex)
         {
             ErrorMessage = $"Could not delete the task: {ex.Message}";
         }

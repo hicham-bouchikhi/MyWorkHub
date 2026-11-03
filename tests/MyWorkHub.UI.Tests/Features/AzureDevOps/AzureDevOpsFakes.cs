@@ -14,9 +14,17 @@ internal sealed class FakeAzureDevOpsConnection : IAzureDevOpsConnectionService
 
     public List<string> ConnectAttempts { get; } = [];
 
+    /// <summary>When set, connecting throws it (e.g. an <see cref="HttpClient"/> timeout).</summary>
+    public Exception? ConnectFailure { get; set; }
+
     public Task<AzureDevOpsConnectResult> ConnectAsync(string personalAccessToken, CancellationToken ct = default)
     {
         ConnectAttempts.Add(personalAccessToken);
+        if (ConnectFailure is { } failure)
+        {
+            return Task.FromException<AzureDevOpsConnectResult>(failure);
+        }
+
         if (personalAccessToken != VALID_TOKEN)
         {
             return Task.FromResult(AzureDevOpsConnectResult.Failure("Azure DevOps rejected the personal access token."));

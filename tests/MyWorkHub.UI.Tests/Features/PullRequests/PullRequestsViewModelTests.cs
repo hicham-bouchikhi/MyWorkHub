@@ -83,6 +83,21 @@ public sealed class PullRequestsViewModelTests
     }
 
     [Fact]
+    public async Task Should_keep_the_prompt_and_show_an_error_when_a_library_cancels_connecting_on_its_own()
+    {
+        _connection.HasToken = false;
+        _connection.ConnectFailure = new TaskCanceledException("timed out");
+        var viewModel = await LoadedAsync(1);
+
+        viewModel.PersonalAccessToken = "any";
+        await viewModel.ConnectCommand.ExecuteAsync(null);
+
+        Assert.True(viewModel.NeedsToken);
+        Assert.Contains("timed out", viewModel.ConnectionProblem, StringComparison.Ordinal);
+        Assert.False(viewModel.IsBusy);
+    }
+
+    [Fact]
     public async Task Should_keep_the_prompt_and_show_why_when_the_token_is_rejected()
     {
         _connection.HasToken = false;

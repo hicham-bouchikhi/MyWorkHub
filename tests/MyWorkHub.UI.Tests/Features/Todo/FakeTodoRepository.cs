@@ -15,15 +15,23 @@ internal sealed class FakeTodoRepository : ITodoRepository
 
     public Exception? Failure { get; set; }
 
+    /// <summary>When set, <see cref="GetAllAsync"/> waits for it (or for its token) before answering.</summary>
+    public TaskCompletionSource? GetAllGate { get; set; }
+
     public IReadOnlyList<TodoItem> Items => _items;
 
     public static TodoItem Item(string title, bool isCompleted = false)
         => new(Guid.NewGuid(), title, isCompleted, new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc));
 
-    public Task<IReadOnlyList<TodoItem>> GetAllAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<TodoItem>> GetAllAsync(CancellationToken ct = default)
     {
+        if (GetAllGate is { } gate)
+        {
+            await gate.Task.WaitAsync(ct);
+        }
+
         ThrowIfFailing();
-        return Task.FromResult<IReadOnlyList<TodoItem>>([.. _items]);
+        return [.. _items];
     }
 
     public Task<TodoItem> AddAsync(string title, CancellationToken ct = default)
@@ -34,16 +42,23 @@ internal sealed class FakeTodoRepository : ITodoRepository
         return Task.FromResult(item);
     }
 
-    public Task SetCompletedAsync(Guid id, bool isCompleted, CancellationToken ct = default)
+    /// <summary>When set, the next <see cref="SetCompletedAsync"/> call waits for it (or for its token) first.</summary>
+    public TaskCompletionSource? SetCompletedGate { get; set; }
+
+    public async Task SetCompletedAsync(Guid id, bool isCompleted, CancellationToken ct = default)
     {
+        if (SetCompletedGate is { } gate)
+        {
+            SetCompletedGate = null;
+            await gate.Task.WaitAsync(ct);
+        }
+
         ThrowIfFailing();
         var index = _items.FindIndex(t => t.Id == id);
         if (index >= 0)
         {
             _items[index] = _items[index] with { IsCompleted = isCompleted };
         }
-
-        return Task.CompletedTask;
     }
 
     public Task DeleteAsync(Guid id, CancellationToken ct = default)
