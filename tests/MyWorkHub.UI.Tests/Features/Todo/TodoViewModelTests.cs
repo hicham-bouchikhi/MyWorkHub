@@ -72,13 +72,33 @@ public sealed class TodoViewModelTests
 
         viewModel.NewTitle = "New";
         await viewModel.AddCommand.ExecuteAsync(null);
-        Assert.Contains("add", viewModel.ErrorMessage, StringComparison.Ordinal);
+        Assert.Equal("Could not add the task: timed out", viewModel.ErrorMessage);
 
         await viewModel.ToggleCompletedCommand.ExecuteAsync(row);
-        Assert.Contains("update", viewModel.ErrorMessage, StringComparison.Ordinal);
+        Assert.Equal("Could not update the task: timed out", viewModel.ErrorMessage);
 
         await viewModel.DeleteCommand.ExecuteAsync(row);
-        Assert.Contains("delete", viewModel.ErrorMessage, StringComparison.Ordinal);
+        Assert.Equal("Could not delete the task: timed out", viewModel.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task Should_finish_ticking_a_row_off_when_another_row_is_ticked_meanwhile()
+    {
+        // The toolkit cancels the running execution's token on every new execution, even a concurrent
+        // one for another row: that must not abandon the first row's change.
+        var repository = new FakeTodoRepository(FakeTodoRepository.Item("A"), FakeTodoRepository.Item("B"));
+        var viewModel = await LoadedAsync(repository);
+        var gate = new TaskCompletionSource();
+        repository.SetCompletedGate = gate;
+
+        var first = viewModel.ToggleCompletedCommand.ExecuteAsync(viewModel.Items[0]);
+        await viewModel.ToggleCompletedCommand.ExecuteAsync(viewModel.Items[1]);
+        gate.SetResult();
+        await first;
+
+        Assert.Equal([true, true], viewModel.Items.Select(r => r.IsCompleted));
+        Assert.Equal([true, true], repository.Items.Select(t => t.IsCompleted));
+        Assert.Null(viewModel.ErrorMessage);
     }
 
     [Fact]

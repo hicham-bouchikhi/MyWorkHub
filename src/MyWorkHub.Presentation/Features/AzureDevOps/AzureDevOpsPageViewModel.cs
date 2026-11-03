@@ -71,6 +71,16 @@ public abstract partial class AzureDevOpsPageViewModel : PageViewModel, IRefresh
         {
             result = await _connection!.ConnectAsync(PersonalAccessToken, ct);
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return; // superseded: the newer execution owns the page
+        }
+        catch (Exception ex)
+        {
+            // e.g. the HttpClient timeout: a cancellation our token never requested (ADR-0008).
+            ConnectionProblem = $"Could not verify the token: {ex.Message}";
+            return;
+        }
         finally
         {
             IsBusy = false;

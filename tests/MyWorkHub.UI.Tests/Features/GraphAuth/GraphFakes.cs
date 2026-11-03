@@ -13,6 +13,9 @@ internal sealed class FakeGraphConnection : IGraphConnectionService
     /// <summary>When set, sign-in fails with this message.</summary>
     public string? SignInError { get; set; }
 
+    /// <summary>When set, sign-in throws it (e.g. a library-internal cancellation).</summary>
+    public Exception? SignInFailure { get; set; }
+
     public int SignInCalls { get; private set; }
 
     public Task<string?> GetSignedInAccountAsync(CancellationToken ct = default)
@@ -21,6 +24,11 @@ internal sealed class FakeGraphConnection : IGraphConnectionService
     public Task<GraphSignInResult> SignInAsync(CancellationToken ct = default)
     {
         SignInCalls++;
+        if (SignInFailure is { } failure)
+        {
+            return Task.FromException<GraphSignInResult>(failure);
+        }
+
         if (SignInError is { } error)
         {
             return Task.FromResult(GraphSignInResult.Failure(error));

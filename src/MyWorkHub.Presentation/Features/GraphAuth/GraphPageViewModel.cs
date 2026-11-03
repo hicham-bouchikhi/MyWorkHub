@@ -62,6 +62,16 @@ public abstract partial class GraphPageViewModel : PageViewModel, IRefreshablePa
         {
             result = await _connection!.SignInAsync(ct);
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return; // superseded: the newer execution owns the page
+        }
+        catch (Exception ex)
+        {
+            // e.g. MSAL cancelling internally: a cancellation our token never requested (ADR-0008).
+            ErrorMessage = $"Could not sign in: {ex.Message}";
+            return;
+        }
         finally
         {
             IsBusy = false;

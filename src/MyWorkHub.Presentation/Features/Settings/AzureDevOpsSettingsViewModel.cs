@@ -110,6 +110,17 @@ public sealed partial class AzureDevOpsSettingsViewModel : ViewModelBase
         {
             result = await _connection!.ConnectAsync(PersonalAccessToken, ct);
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return; // superseded: the newer execution owns the page
+        }
+        catch (Exception ex)
+        {
+            // e.g. the HttpClient timeout: a cancellation our token never requested (ADR-0008).
+            ErrorMessage = $"Could not verify the token: {ex.Message}";
+            RefreshTokenStatus();
+            return;
+        }
         finally
         {
             IsBusy = false;

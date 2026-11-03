@@ -97,10 +97,14 @@ public sealed partial class AutomationsViewModel : PageViewModel
             return;
         }
 
+        // A superseded run returns quietly from each step; only a completed one counts as loaded.
         await RefreshAsync(ct);
-        await LoadPlanAsync(ct);
+        if (ct.IsCancellationRequested)
+        {
+            return;
+        }
 
-        // A superseded run returns quietly from both steps; only a completed one counts as loaded.
+        await LoadPlanAsync(ct);
         _isLoaded = !ct.IsCancellationRequested;
     }
 
@@ -149,8 +153,12 @@ public sealed partial class AutomationsViewModel : PageViewModel
     }
 
     /// <summary>Queues an immediate run; its outcome shows up in the history (and as a notification) when done.</summary>
+    /// <remarks>
+    /// Takes no CancellationToken: the toolkit cancels the running execution's token on every new execution —
+    /// even a concurrent one for another card — which would drop this card's request silently.
+    /// </remarks>
     [RelayCommand(AllowConcurrentExecutions = true)]
-    private async Task RunNowAsync(AutomationRowViewModel row, CancellationToken ct)
+    private async Task RunNowAsync(AutomationRowViewModel row)
     {
         ArgumentNullException.ThrowIfNull(row);
         if (_scheduler is null)
@@ -160,12 +168,8 @@ public sealed partial class AutomationsViewModel : PageViewModel
 
         try
         {
-            await _scheduler.RunNowAsync(row.Id, ct);
+            await _scheduler.RunNowAsync(row.Id);
             row.RunNowStatus = "Started — you will be notified when it finishes.";
-        }
-        catch (OperationCanceledException) when (ct.IsCancellationRequested)
-        {
-            return; // superseded: the newer execution owns the page
         }
         catch (Exception ex)
         {

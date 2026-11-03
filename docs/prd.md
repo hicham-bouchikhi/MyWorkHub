@@ -15,15 +15,17 @@
 | Credentials encrypted with Windows DPAPI / `ProtectedData` (§6, §7, §9) | ASP.NET Core Data Protection: DPAPI on Windows, AES + HMAC key ring elsewhere |
 | Email is a read-only digest, "not a full email client" (§2.1, §4.2) | A mail client: folder tree, optional *Favorites* view, sandboxed HTML reading pane, AI digest. Still no compose/reply/move |
 | Clicking an email opens Outlook Web (§4.2) | The message opens in the in-app reading pane; links go to the default browser |
-| Automation steps retry 3× with 30 s delays (§7) | No automatic retry: each remote-work sync step is isolated and logged; a failed run is rerun with "Run now" |
-| Remote work: calendar picker in a "Remote Work module", manual trigger only (§5.2) | The month's days are typed on the Automations page; `RemoteWorkSync` can also run on a cron (off by default) |
+| Automation steps retry up to 3 times (§7) | No automatic retry: each remote-work sync step is isolated and logged; a failed run is rerun with "Run now" |
+| Remote work: calendar picker in a "Remote Work module" for the current or any future month, manual trigger only (§5.2) | The days are typed on the Automations page, for the current month only; `RemoteWorkSync` can also run on a cron (off by default) |
+| Every sensitive value is editable in the Settings UI (§6) | Credentials are (Automations page, Settings → Azure DevOps); the billing address, email templates, site URLs/selectors and cron expressions are edited in `appsettings.json` |
 | Teams tries `ChannelMessage.Read.All` (§4.5, §9) | Never requested (needs admin consent and would block sign-in); DMs and group chats only |
-| Azure AD app is multi-tenant on `common` (§9) | Configured single-tenant in the shipped settings |
+| Azure AD app is multi-tenant (§9) | The shipped settings pin a single tenant ID (the code default is `organizations`) |
 
 **Not implemented (yet)**
 
 - Email filtering by sender or subject (§4.2)
-- PR age column/highlight for PRs older than 2 days, and the taskbar badge (§4.3)
+- Highlight for PRs older than 2 days, and the taskbar badge (§4.3) — the created date is shown
+- Unread-count badges in the sidebar (§4.5)
 - Work items grouped by state and overdue highlighting (§4.4)
 - Todo due dates and the All / Active / Completed filter, so no "due today" todos on the Dashboard (§4.6)
 - Offline mode with cached, stale-marked data (§7)

@@ -77,7 +77,7 @@ There is no central registration file, no hardcoded sidebar and no naming-conven
 | `IViewModule` | `UI/Features/<Name>/` | the view-model → view map used by `ViewLocator` |
 | `IAutomationModule` | `Automation/Scheduling/` | an automation descriptor + its Quartz job type |
 
-`ModuleDiscovery.Find<T>()` instantiates every public, sealed, parameterless module in the scanned assemblies. Adding a feature means adding these folders and nothing else; the Todo slice is the reference template (step-by-step recipe in `AGENTS.md`).
+`ModuleDiscovery.Find<T>()` instantiates every non-abstract, non-generic `T` with a public parameterless constructor in the scanned assemblies (module classes are `public sealed` by convention). Adding a feature means adding these folders and nothing else; the Todo slice is the reference template (step-by-step recipe in `AGENTS.md`).
 
 ### Composition and fail-loud startup
 
@@ -100,7 +100,7 @@ Consequence: page view-model constructors run at startup, so they stay cheap.
 - **Navigation** goes through `INavigationService.NavigateTo(NavigationTarget)`. A target can carry an `ElementId`; pages implementing `IDeepLinkTarget` (Todo, Email, Pull requests, Work items) select, scroll to and flash that row ([ADR-0004](adr/0004-element-level-deep-linking.md)). Unknown ids are ignored.
 - **Notifications**: `INotificationService.Notify(…, NavigationTarget?)` shows a toast and records it in the bell history; clicking either navigates to the target.
 - **Periodic refresh**: `UpdateWatcher` runs from launch to exit (also while in the tray). Every `UI:RefreshIntervalMinutes` it checks each enabled source (mail, chats, PRs, work items, mentions, calendar), raises one deep-linked notification per new item, then refreshes the page on screen. The first check of a source records a baseline only.
-- **Commands and cancellation**: a page command absorbs the cancellation of a superseded run and reports every other failure, including cancellations a library raised on its own ([ADR-0008](adr/0008-commands-never-rethrow-cancellation.md)).
+- **Commands and cancellation**: a page command absorbs the cancellation of a superseded run and reports every other failure, including cancellations a library raised on its own ([ADR-0008](adr/0008-commands-never-rethrow-cancellation.md)). Per-row commands that run concurrently (tick a todo, run an automation, open a mention) take no cancellation token, because a click on another row would cancel theirs.
 
 ---
 

@@ -42,16 +42,23 @@ internal sealed class FakeTodoRepository : ITodoRepository
         return Task.FromResult(item);
     }
 
-    public Task SetCompletedAsync(Guid id, bool isCompleted, CancellationToken ct = default)
+    /// <summary>When set, the next <see cref="SetCompletedAsync"/> call waits for it (or for its token) first.</summary>
+    public TaskCompletionSource? SetCompletedGate { get; set; }
+
+    public async Task SetCompletedAsync(Guid id, bool isCompleted, CancellationToken ct = default)
     {
+        if (SetCompletedGate is { } gate)
+        {
+            SetCompletedGate = null;
+            await gate.Task.WaitAsync(ct);
+        }
+
         ThrowIfFailing();
         var index = _items.FindIndex(t => t.Id == id);
         if (index >= 0)
         {
             _items[index] = _items[index] with { IsCompleted = isCompleted };
         }
-
-        return Task.CompletedTask;
     }
 
     public Task DeleteAsync(Guid id, CancellationToken ct = default)
