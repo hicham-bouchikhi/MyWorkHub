@@ -1,4 +1,4 @@
-# ADR-0009: Page commands absorb superseded cancellations and report all others
+# ADR-0008: Page commands absorb superseded cancellations and report all others
 
 **Status:** Accepted  
 **Date:** 2026-10-03
