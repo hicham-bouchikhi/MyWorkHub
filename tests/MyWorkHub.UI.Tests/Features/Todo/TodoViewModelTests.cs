@@ -36,6 +36,52 @@ public sealed class TodoViewModelTests
     }
 
     [Fact]
+    public async Task Should_not_fault_when_a_running_load_is_superseded_by_a_new_one()
+    {
+        var repository = new FakeTodoRepository(FakeTodoRepository.Item("A")) { GetAllGate = new TaskCompletionSource() };
+        var viewModel = new TodoViewModel(repository);
+
+        // The toolkit cancels the first run's token when the command executes again (e.g. the page is revisited).
+        var first = viewModel.LoadCommand.ExecuteAsync(null);
+        repository.GetAllGate = null;
+        await viewModel.LoadCommand.ExecuteAsync(null);
+        await first;
+
+        Assert.Equal(["A"], viewModel.Items.Select(r => r.Title));
+        Assert.Null(viewModel.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task Should_show_an_error_when_a_library_cancels_on_its_own()
+    {
+        // e.g. a database timeout: our token was never cancelled.
+        var repository = new FakeTodoRepository { Failure = new TaskCanceledException("timed out") };
+
+        var viewModel = await LoadedAsync(repository);
+
+        Assert.Contains("timed out", viewModel.ErrorMessage, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Should_show_an_error_when_a_library_cancels_on_its_own_while_editing()
+    {
+        var repository = new FakeTodoRepository(FakeTodoRepository.Item("Task"));
+        var viewModel = await LoadedAsync(repository);
+        var row = viewModel.Items[0];
+        repository.Failure = new TaskCanceledException("timed out");
+
+        viewModel.NewTitle = "New";
+        await viewModel.AddCommand.ExecuteAsync(null);
+        Assert.Contains("add", viewModel.ErrorMessage, StringComparison.Ordinal);
+
+        await viewModel.ToggleCompletedCommand.ExecuteAsync(row);
+        Assert.Contains("update", viewModel.ErrorMessage, StringComparison.Ordinal);
+
+        await viewModel.DeleteCommand.ExecuteAsync(row);
+        Assert.Contains("delete", viewModel.ErrorMessage, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Should_degrade_gracefully_when_no_repository_is_registered()
     {
         var viewModel = new TodoViewModel();

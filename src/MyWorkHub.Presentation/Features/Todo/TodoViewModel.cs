@@ -83,7 +83,11 @@ public sealed partial class TodoViewModel : PageViewModel, IDeepLinkTarget
             _isLoaded = true;
             ErrorMessage = null;
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return; // superseded: the newer execution owns the page
+        }
+        catch (Exception ex)
         {
             ErrorMessage = $"Could not load your tasks: {ex.Message}";
             return;
@@ -102,7 +106,11 @@ public sealed partial class TodoViewModel : PageViewModel, IDeepLinkTarget
             NewTitle = "";
             ErrorMessage = null;
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return; // superseded: the newer execution owns the page
+        }
+        catch (Exception ex)
         {
             ErrorMessage = $"Could not add the task: {ex.Message}";
         }
@@ -126,7 +134,11 @@ public sealed partial class TodoViewModel : PageViewModel, IDeepLinkTarget
             row.IsCompleted = completed;
             ErrorMessage = null;
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return; // superseded: the newer execution owns the page
+        }
+        catch (Exception ex)
         {
             row.RefreshCompletion();
             ErrorMessage = $"Could not update the task: {ex.Message}";
@@ -148,7 +160,11 @@ public sealed partial class TodoViewModel : PageViewModel, IDeepLinkTarget
             Items.Remove(row);
             ErrorMessage = null;
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return; // superseded: the newer execution owns the page
+        }
+        catch (Exception ex)
         {
             ErrorMessage = $"Could not delete the task: {ex.Message}";
         }

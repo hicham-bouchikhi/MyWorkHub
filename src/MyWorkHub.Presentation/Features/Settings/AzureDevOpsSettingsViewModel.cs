@@ -205,7 +205,11 @@ public sealed partial class AzureDevOpsSettingsViewModel : ViewModelBase
         {
             await _settings.SaveAzureDevOpsAsync(new AzureDevOpsSettings(url, projects), ct);
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return false; // superseded: the newer execution owns the page
+        }
+        catch (Exception ex)
         {
             ErrorMessage = $"Could not save the Azure DevOps settings: {ex.Message}";
             StatusMessage = null;

@@ -110,6 +110,18 @@ public sealed class AzureDevOpsSettingsViewModelTests
     }
 
     [Fact]
+    public async Task Should_explain_when_a_library_cancels_the_save_on_its_own()
+    {
+        var vm = Loaded();
+        _settings.Failure = new TaskCanceledException("timed out");
+
+        await vm.SaveCommand.ExecuteAsync(Ct);
+
+        Assert.Contains("timed out", vm.ErrorMessage, StringComparison.Ordinal);
+        Assert.Null(vm.StatusMessage);
+    }
+
+    [Fact]
     public async Task Should_remove_a_project_and_warn_when_saving_without_any()
     {
         _settings.AzureDevOps = new AzureDevOpsSettings("https://dev.azure.com/cegid/", ["Alpha"]);

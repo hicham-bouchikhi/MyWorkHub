@@ -197,6 +197,19 @@ public sealed class WorkItemsViewModelTests
         Assert.Single(_browser.Opened);
     }
 
+    [Fact]
+    public async Task Should_still_mark_the_mention_read_for_the_session_when_a_library_cancels_on_its_own()
+    {
+        var viewModel = await LoadedAsync();
+        _seen.Failure = new TaskCanceledException("timed out");
+        var mention = viewModel.Mentions[0];
+
+        await viewModel.OpenMentionCommand.ExecuteAsync(mention);
+
+        Assert.False(mention.IsUnread);
+        Assert.Null(viewModel.ErrorMessage);
+    }
+
     // --- Deep links: two element kinds on one page --------------------------------------------
 
     [Fact]

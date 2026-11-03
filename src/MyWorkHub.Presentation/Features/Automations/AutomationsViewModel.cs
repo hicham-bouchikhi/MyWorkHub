@@ -99,7 +99,9 @@ public sealed partial class AutomationsViewModel : PageViewModel
 
         await RefreshAsync(ct);
         await LoadPlanAsync(ct);
-        _isLoaded = true;
+
+        // A superseded run returns quietly from both steps; only a completed one counts as loaded.
+        _isLoaded = !ct.IsCancellationRequested;
     }
 
     /// <summary>Re-reads schedules and run history (e.g. after a queued run finished).</summary>
@@ -132,7 +134,11 @@ public sealed partial class AutomationsViewModel : PageViewModel
 
             ErrorMessage = null;
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return; // superseded: the newer execution owns the page
+        }
+        catch (Exception ex)
         {
             ErrorMessage = $"Could not load the automations: {ex.Message}";
         }
@@ -157,7 +163,11 @@ public sealed partial class AutomationsViewModel : PageViewModel
             await _scheduler.RunNowAsync(row.Id, ct);
             row.RunNowStatus = "Started — you will be notified when it finishes.";
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return; // superseded: the newer execution owns the page
+        }
+        catch (Exception ex)
         {
             row.RunNowStatus = $"Could not start: {ex.Message}";
         }
@@ -229,7 +239,11 @@ public sealed partial class AutomationsViewModel : PageViewModel
                 ? "Saved: no remote-work days this month."
                 : $"Saved: {plan.Days.Count} remote-work day(s).";
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return; // superseded: the newer execution owns the page
+        }
+        catch (Exception ex)
         {
             PlanMessage = $"Could not save the plan: {ex.Message}";
         }
@@ -246,7 +260,11 @@ public sealed partial class AutomationsViewModel : PageViewModel
         {
             PlanDaysText = (await _plans.GetAsync(PlanYear, PlanMonth, ct)).FormatDays();
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return; // superseded: the newer execution owns the page
+        }
+        catch (Exception ex)
         {
             PlanMessage = $"Could not load the plan: {ex.Message}";
         }

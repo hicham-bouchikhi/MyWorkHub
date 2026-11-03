@@ -91,6 +91,17 @@ public sealed class EmailSettingsViewModelTests
     }
 
     [Fact]
+    public async Task Should_show_why_when_a_library_cancels_the_save_on_its_own()
+    {
+        var viewModel = await LoadedAsync();
+        _settings.Failure = new TaskCanceledException("timed out");
+
+        await viewModel.SaveCommand.ExecuteAsync(null);
+
+        Assert.Contains("timed out", viewModel.ErrorMessage, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Should_be_unavailable_without_a_settings_store()
     {
         Assert.False(new EmailSettingsViewModel().IsAvailable);

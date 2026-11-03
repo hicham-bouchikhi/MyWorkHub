@@ -124,10 +124,11 @@ public sealed partial class WorkItemsViewModel : AzureDevOpsPageViewModel, IDeep
         {
             await _seenMentions.MarkSeenAsync(row.CommentId, ct);
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (Exception)
         {
-            // Read state is a convenience: failing to persist it only means the mention shows as
-            // unread again next session. The user got what they clicked for — don't raise an error.
+            // Read state is a convenience: failing (or being cancelled) to persist it only means the
+            // mention shows as unread again next session. The user got what they clicked for — don't
+            // raise an error.
         }
     }
 
